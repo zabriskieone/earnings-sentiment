@@ -1,5 +1,7 @@
 # Earnings Sentiment
 
+[![tests](https://github.com/zabriskieone/earnings-sentiment/actions/workflows/tests.yml/badge.svg)](https://github.com/zabriskieone/earnings-sentiment/actions/workflows/tests.yml)
+
 An interactive dashboard that reads every quarterly result a company files with
 the US SEC and shows:
 
@@ -38,7 +40,7 @@ cp .env.example .env    # then edit SEC_USER_AGENT="Your Name you@example.com"
 ### Option A: Docker (no Python setup)
 
 ```bash
-git clone https://github.com/<your-account>/earnings-sentiment.git
+git clone https://github.com/zabriskieone/earnings-sentiment.git
 ```
 ```bash
 cd earnings-sentiment
@@ -54,7 +56,7 @@ minutes). For a much smaller image without FinBERT:
 ### Option B: Python 3.10+
 
 ```bash
-git clone https://github.com/<your-account>/earnings-sentiment.git
+git clone https://github.com/zabriskieone/earnings-sentiment.git
 ```
 ```bash
 cd earnings-sentiment
