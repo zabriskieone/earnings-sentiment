@@ -94,7 +94,13 @@ with st.sidebar:
     st.session_state["ua"] = ua
     ua_ok = config.valid_user_agent(ua)
     if not ua_ok:
-        st.info("Enter a name and e-mail to start, e.g. `Jane Doe jane@example.com`.")
+        if "@" in ua and len(ua.split()) < 2:
+            st.warning("Almost there: add your **name before the e-mail**, e.g. `Jane Doe jane@example.com`. "
+                       "SEC asks for both.")
+        elif ua.strip() and "@" not in ua:
+            st.warning("Add a contact **e-mail** after your name, e.g. `Jane Doe jane@example.com`.")
+        else:
+            st.info("Enter your name and e-mail to start, e.g. `Jane Doe jane@example.com`.")
 
     choice = None
     if ua_ok:
