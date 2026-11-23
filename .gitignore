@@ -1,0 +1,11 @@
+# local secrets / identity
+.env
+# caches (SEC downloads, sentiment scores)
+data/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.DS_Store

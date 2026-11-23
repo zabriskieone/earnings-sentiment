@@ -1,0 +1,1987 @@
+{
+  "ticker": "AAPL",
+  "company": "Apple Inc.",
+  "cik": "0000320193",
+  "generated_at": "2026-11-23 03:48 UTC",
+  "used_finbert": true,
+  "dictionary_source": "LM master dictionary bundled with pysentiment2",
+  "latest_quarter": "FY2026 Q4",
+  "quarters": [
+    {
+      "label": "FY2025 Q1",
+      "period_end": "2024-12-28",
+      "form": "10-Q",
+      "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000008/aapl-20241228.htm",
+      "press_release_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000007/a8-kex991q1202512282024.htm",
+      "sentiment": {
+        "mdna": {
+          "section": "mdna",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000008/aapl-20241228.htm",
+          "n_sentences": 76,
+          "lm": {
+            "words": 2024,
+            "positive": 16,
+            "negative": 15,
+            "uncertainty": 24,
+            "litigious": 10,
+            "constraining": 20,
+            "net_tone": 0.03225806451612903,
+            "positive_pct": 0.7905138339920948,
+            "negative_pct": 0.741106719367589,
+            "uncertainty_pct": 1.1857707509881423,
+            "litigious_pct": 0.49407114624505927,
+            "constraining_pct": 0.9881422924901185
+          },
+          "finbert": {
+            "score": -0.009488627706703386,
+            "positive_share": 0.18421052631578946,
+            "negative_share": 0.21052631578947367,
+            "neutral_share": 0.6052631578947368,
+            "sentences_scored": 76
+          },
+          "top_positive": [
+            {
+              "text": "Europe net sales increased during the first quarter of 2025 compared to the same quarter in 2024 due primarily to higher net sales of Services and iPhone.",
+              "score": 0.935
+            },
+            {
+              "text": "Americas net sales increased during the first quarter of 2025 compared to the same quarter in 2024 due primarily to higher net sales of Services and iPhone.",
+              "score": 0.932
+            },
+            {
+              "text": "Japan net sales increased during the first quarter of 2025 compared to the same quarter in 2024 due primarily to higher net sales of iPhone and Services.",
+              "score": 0.932
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "Greater China net sales decreased during the first quarter of 2025 compared to the same quarter in 2024 due to lower net sales of iPhone.",
+              "score": -0.966
+            },
+            {
+              "text": "Wearables, Home and Accessories net sales decreased during the first quarter of 2025 compared to the same quarter in 2024 due primarily to lower net sales of Wearables.",
+              "score": -0.965
+            },
+            {
+              "text": "The weakness in foreign currencies relative to the U.S. dollar had an unfavorable year-over-year impact on Americas net sales during the first quarter of 2025.",
+              "score": -0.953
+            }
+          ]
+        },
+        "risk": {
+          "section": "risk",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000008/aapl-20241228.htm",
+          "n_sentences": 35,
+          "lm": {
+            "words": 1342,
+            "positive": 3,
+            "negative": 68,
+            "uncertainty": 23,
+            "litigious": 58,
+            "constraining": 19,
+            "net_tone": -0.9154929577464789,
+            "positive_pct": 0.22354694485842028,
+            "negative_pct": 5.0670640834575265,
+            "uncertainty_pct": 1.713859910581222,
+            "litigious_pct": 4.321907600596125,
+            "constraining_pct": 1.4157973174366616
+          },
+          "finbert": null,
+          "top_positive": [],
+          "top_negative": [
+            {
+              "text": "For example, the Company is subject to civil antitrust lawsuits in the U.S. alleging monopolization or attempted monopolization in the markets for \u201cperformance smartphones\u201d and \u201csmartphones\u201d generally in violation of U.S. antitrust laws.",
+              "score": -1.714
+            },
+            {
+              "text": "On August 5, 2024, Google was found to have violated U.S. antitrust laws.",
+              "score": -1.667
+            },
+            {
+              "text": "The technology industry, including, in some instances, the Company, is subject to intense media, political and regulatory scrutiny, which exposes the Company to increasing regulation, government investigations, legal actions and penalties.",
+              "score": -1.29
+            }
+          ]
+        },
+        "press": {
+          "section": "press",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000007/a8-kex991q1202512282024.htm",
+          "n_sentences": 17,
+          "lm": {
+            "words": 321,
+            "positive": 6,
+            "negative": 0,
+            "uncertainty": 2,
+            "litigious": 1,
+            "constraining": 0,
+            "net_tone": 1.0,
+            "positive_pct": 1.8691588785046729,
+            "negative_pct": 0.0,
+            "uncertainty_pct": 0.6230529595015576,
+            "litigious_pct": 0.3115264797507788,
+            "constraining_pct": 0.0
+          },
+          "finbert": {
+            "score": 0.3895627507282531,
+            "positive_share": 0.4117647058823529,
+            "negative_share": 0.0,
+            "neutral_share": 0.5882352941176471,
+            "sentences_scored": 17
+          },
+          "top_positive": [
+            {
+              "text": "\u201cWe are also pleased that our installed base of active devices has reached a new all-time high across all products and geographic segments.\u201d",
+              "score": 0.934
+            },
+            {
+              "text": "The Company posted quarterly revenue of $124.3 billion, up 4 percent year over year, and quarterly diluted earnings per share of $2.40, up 10 percent year over year.",
+              "score": 0.932
+            },
+            {
+              "text": "\u201cOur record revenue and strong operating margins drove EPS to a new all-time record with double-digit growth and allowed us to return over $30 billion to shareholders,\u201d said Kevan Parekh, Apple\u2019s CFO.",
+              "score": 0.93
+            }
+          ],
+          "top_negative": []
+        }
+      },
+      "health": {
+        "overall": 73.9,
+        "pillars": {
+          "Growth": 65.5,
+          "Profitability": 98.6,
+          "Cash generation": 87.0,
+          "Liquidity": 44.0,
+          "Leverage": 74.3
+        },
+        "metrics": {
+          "revenue_yoy": 0.03951494877691825,
+          "eps_yoy": 0.10091743119266043,
+          "operating_margin_ttm": 0.3175535678188801,
+          "net_margin_ttm": 0.24295027289266222,
+          "fcf_margin_ttm": 0.24838033151404892,
+          "fcf_conversion_ttm": 1.0223504940197607,
+          "current_ratio": 0.9229383853427077,
+          "cash_to_current_liabilities": 0.9792401205278287,
+          "debt_to_equity": 1.4499985020521886,
+          "debt_to_ocf_ttm": 0.8938537684451585
+        },
+        "metric_scores": {
+          "revenue_yoy": 55.8,
+          "eps_yoy": 75.2,
+          "operating_margin_ttm": 100.0,
+          "net_margin_ttm": 97.2,
+          "fcf_margin_ttm": 99.4,
+          "fcf_conversion_ttm": 74.6,
+          "current_ratio": 28.2,
+          "cash_to_current_liabilities": 59.9,
+          "debt_to_equity": 57.4,
+          "debt_to_ocf_ttm": 91.2
+        },
+        "band": "Healthy"
+      },
+      "piotroski": {
+        "score": 7,
+        "available": 9,
+        "signals": [
+          {
+            "group": "Profitability",
+            "signal": "Positive return on assets (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Positive operating cash flow (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Return on assets improved vs a year ago",
+            "pass": false
+          },
+          {
+            "group": "Profitability",
+            "signal": "Cash flow exceeds net income (earnings quality)",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Long-term debt / assets decreased",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Current ratio improved",
+            "pass": false
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "No net new shares issued",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Gross margin improved (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Asset turnover improved (TTM)",
+            "pass": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "FY2025 Q2",
+      "period_end": "2025-03-29",
+      "form": "10-Q",
+      "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000057/aapl-20250329.htm",
+      "press_release_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000055/a8-kex991q2202503292025.htm",
+      "sentiment": {
+        "mdna": {
+          "section": "mdna",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000057/aapl-20250329.htm",
+          "n_sentences": 93,
+          "lm": {
+            "words": 2718,
+            "positive": 19,
+            "negative": 35,
+            "uncertainty": 29,
+            "litigious": 12,
+            "constraining": 22,
+            "net_tone": -0.2962962962962963,
+            "positive_pct": 0.6990434142752023,
+            "negative_pct": 1.287711552612215,
+            "uncertainty_pct": 1.0669610007358352,
+            "litigious_pct": 0.44150110375275936,
+            "constraining_pct": 0.8094186902133922
+          },
+          "finbert": {
+            "score": -0.0500571583648042,
+            "positive_share": 0.22580645161290322,
+            "negative_share": 0.2903225806451613,
+            "neutral_share": 0.4838709677419355,
+            "sentences_scored": 93
+          },
+          "top_positive": [
+            {
+              "text": "Year-over-year Europe net sales increased during the first six months of 2025 due primarily to higher net sales of Services, Mac and iPad.",
+              "score": 0.944
+            },
+            {
+              "text": "Year-over-year Rest of Asia Pacific net sales increased during the first six months of 2025 due primarily to higher net sales of Services.",
+              "score": 0.939
+            },
+            {
+              "text": "iPhone net sales increased during the second quarter of 2025 compared to the second quarter of 2024 due primarily to higher net sales of Pro models.",
+              "score": 0.933
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "Greater China net sales decreased during the first six months of 2025 compared to the same period in 2024 due to lower net sales of iPhone.",
+              "score": -0.966
+            },
+            {
+              "text": "Wearables, Home and Accessories net sales decreased during the second quarter and first six months of 2025 compared to the same periods in 2024 due primarily to lower net sales of Wearables.",
+              "score": -0.965
+            },
+            {
+              "text": "Products gross margin percentage decreased during the second quarter and first six months of 2025 compared to the same periods in 2024 due primarily to a different mix of products and weakness in foreign currencies relative to the U.S. dollar, partially offset by favorable costs.",
+              "score": -0.96
+            }
+          ]
+        },
+        "risk": {
+          "section": "risk",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000057/aapl-20250329.htm",
+          "n_sentences": 47,
+          "lm": {
+            "words": 1809,
+            "positive": 2,
+            "negative": 93,
+            "uncertainty": 38,
+            "litigious": 11,
+            "constraining": 21,
+            "net_tone": -0.9578947368421052,
+            "positive_pct": 0.11055831951354339,
+            "negative_pct": 5.140961857379768,
+            "uncertainty_pct": 2.1006080707573247,
+            "litigious_pct": 0.6080707573244887,
+            "constraining_pct": 1.1608623548922057
+          },
+          "finbert": null,
+          "top_positive": [],
+          "top_negative": [
+            {
+              "text": "If disputes and conflicts further escalate, actions by governments in response could be significantly more severe and restrictive.",
+              "score": -2.222
+            },
+            {
+              "text": "The Company\u2019s business can be impacted by political events, trade and other international disputes, geopolitical tensions, conflict, terrorism, natural disasters, public health issues, industrial accidents and other business interruptions.",
+              "score": -1.667
+            },
+            {
+              "text": "While the Company\u2019s suppliers are required to maintain safe working environments and operations, an industrial accident could occur and could result in serious injuries or loss of life, disruption to the Company\u2019s business, and harm to the Company\u2019s reputation.",
+              "score": -1.429
+            }
+          ]
+        },
+        "press": {
+          "section": "press",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000055/a8-kex991q2202503292025.htm",
+          "n_sentences": 16,
+          "lm": {
+            "words": 321,
+            "positive": 4,
+            "negative": 1,
+            "uncertainty": 4,
+            "litigious": 1,
+            "constraining": 0,
+            "net_tone": 0.6,
+            "positive_pct": 1.2461059190031152,
+            "negative_pct": 0.3115264797507788,
+            "uncertainty_pct": 1.2461059190031152,
+            "litigious_pct": 0.3115264797507788,
+            "constraining_pct": 0.0
+          },
+          "finbert": {
+            "score": 0.4676863655622583,
+            "positive_share": 0.5625,
+            "negative_share": 0.0,
+            "neutral_share": 0.4375,
+            "sentences_scored": 16
+          },
+          "top_positive": [
+            {
+              "text": "\u201cAnd thanks to our high levels of customer loyalty and satisfaction, our installed base of active devices once again reached a new all-time high across all product categories and geographic segments.\u201d",
+              "score": 0.935
+            },
+            {
+              "text": "\u201cToday Apple is reporting strong quarterly results, including double-digit growth in Services,\u201d said Tim Cook, Apple\u2019s CEO.",
+              "score": 0.931
+            },
+            {
+              "text": "The Company posted quarterly revenue of $95.4 billion, up 5 percent year over year, and quarterly diluted earnings per share of $1.65, up 8 percent year over year.",
+              "score": 0.931
+            }
+          ],
+          "top_negative": []
+        }
+      },
+      "health": {
+        "overall": 72.3,
+        "pillars": {
+          "Growth": 64.9,
+          "Profitability": 98.6,
+          "Cash generation": 85.8,
+          "Liquidity": 38.3,
+          "Leverage": 74.0
+        },
+        "metrics": {
+          "revenue_yoy": 0.050753143146783024,
+          "eps_yoy": 0.07843137254901954,
+          "operating_margin_ttm": 0.31811892118711377,
+          "net_margin_ttm": 0.2430126434312604,
+          "fcf_margin_ttm": 0.24598991922391011,
+          "fcf_conversion_ttm": 1.0122515263017247,
+          "current_ratio": 0.8208700223419635,
+          "cash_to_current_liabilities": 0.9194236741808524,
+          "debt_to_equity": 1.4699383196598599,
+          "debt_to_ocf_ttm": 0.8962174595640585
+        },
+        "metric_scores": {
+          "revenue_yoy": 60.3,
+          "eps_yoy": 69.6,
+          "operating_margin_ttm": 100.0,
+          "net_margin_ttm": 97.2,
+          "fcf_margin_ttm": 98.4,
+          "fcf_conversion_ttm": 73.2,
+          "current_ratio": 21.4,
+          "cash_to_current_liabilities": 55.3,
+          "debt_to_equity": 56.7,
+          "debt_to_ocf_ttm": 91.2
+        },
+        "band": "Healthy"
+      },
+      "piotroski": {
+        "score": 7,
+        "available": 9,
+        "signals": [
+          {
+            "group": "Profitability",
+            "signal": "Positive return on assets (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Positive operating cash flow (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Return on assets improved vs a year ago",
+            "pass": false
+          },
+          {
+            "group": "Profitability",
+            "signal": "Cash flow exceeds net income (earnings quality)",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Long-term debt / assets decreased",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Current ratio improved",
+            "pass": false
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "No net new shares issued",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Gross margin improved (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Asset turnover improved (TTM)",
+            "pass": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "FY2025 Q3",
+      "period_end": "2025-06-28",
+      "form": "10-Q",
+      "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000073/aapl-20250628.htm",
+      "press_release_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000071/a8-kex991q3202506282025.htm",
+      "sentiment": {
+        "mdna": {
+          "section": "mdna",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000073/aapl-20250628.htm",
+          "n_sentences": 84,
+          "lm": {
+            "words": 2533,
+            "positive": 21,
+            "negative": 23,
+            "uncertainty": 28,
+            "litigious": 10,
+            "constraining": 22,
+            "net_tone": -0.045454545454545456,
+            "positive_pct": 0.8290564547966838,
+            "negative_pct": 0.9080142123963679,
+            "uncertainty_pct": 1.1054086063955784,
+            "litigious_pct": 0.3947887879984208,
+            "constraining_pct": 0.8685353335965259
+          },
+          "finbert": {
+            "score": 0.00032935865844289464,
+            "positive_share": 0.2261904761904762,
+            "negative_share": 0.23809523809523808,
+            "neutral_share": 0.5357142857142857,
+            "sentences_scored": 84
+          },
+          "top_positive": [
+            {
+              "text": "iPhone net sales increased during the third quarter and first nine months of 2025 compared to the same periods in 2024 due to higher net sales of Pro models.",
+              "score": 0.934
+            },
+            {
+              "text": "Greater China net sales increased during the third quarter of 2025 compared to the third quarter of 2024 due primarily to higher net sales of iPhone and Mac.",
+              "score": 0.933
+            },
+            {
+              "text": "Mac net sales increased during the third quarter and first nine months of 2025 compared to the same periods in 2024 due to higher net sales of both laptops and desktops.",
+              "score": 0.931
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "Wearables, Home and Accessories net sales decreased during the third quarter and first nine months of 2025 compared to the same periods in 2024 due primarily to lower net sales of Wearables and Accessories.",
+              "score": -0.965
+            },
+            {
+              "text": "Greater China net sales decreased during the first nine months of 2025 compared to the same period in 2024 due to lower net sales of iPhone, partially offset by higher net sales of Mac.",
+              "score": -0.96
+            },
+            {
+              "text": "Products gross margin percentage decreased during the third quarter of 2025 compared to the third quarter of 2024 due primarily to tariffs and a different mix of products, partially offset by favorable costs.",
+              "score": -0.957
+            }
+          ]
+        },
+        "risk": {
+          "section": "risk",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000073/aapl-20250628.htm",
+          "n_sentences": 2,
+          "lm": {
+            "words": 159,
+            "positive": 0,
+            "negative": 2,
+            "uncertainty": 5,
+            "litigious": 1,
+            "constraining": 0,
+            "net_tone": -1.0,
+            "positive_pct": 0.0,
+            "negative_pct": 1.2578616352201257,
+            "uncertainty_pct": 3.1446540880503147,
+            "litigious_pct": 0.6289308176100629,
+            "constraining_pct": 0.0
+          },
+          "finbert": null,
+          "top_positive": [],
+          "top_negative": []
+        },
+        "press": {
+          "section": "press",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000071/a8-kex991q3202506282025.htm",
+          "n_sentences": 15,
+          "lm": {
+            "words": 299,
+            "positive": 5,
+            "negative": 0,
+            "uncertainty": 1,
+            "litigious": 1,
+            "constraining": 0,
+            "net_tone": 1.0,
+            "positive_pct": 1.6722408026755853,
+            "negative_pct": 0.0,
+            "uncertainty_pct": 0.33444816053511706,
+            "litigious_pct": 0.33444816053511706,
+            "constraining_pct": 0.0
+          },
+          "finbert": {
+            "score": 0.3480220422769586,
+            "positive_share": 0.4,
+            "negative_share": 0.0,
+            "neutral_share": 0.6,
+            "sentences_scored": 15
+          },
+          "top_positive": [
+            {
+              "text": "\u201cOur installed base of active devices also reached a new all-time high across all product categories and geographic segments, thanks to our very high levels of customer satisfaction and loyalty.\u201d",
+              "score": 0.939
+            },
+            {
+              "text": "The Company posted quarterly revenue of $94.0 billion, up 10 percent year over year, and quarterly diluted earnings per share of $1.57, up 12 percent year over year.",
+              "score": 0.932
+            },
+            {
+              "text": "\u201cWe are very pleased with our record business performance for the June quarter, which generated EPS growth of 12 percent,\u201d said Kevan Parekh, Apple\u2019s CFO.",
+              "score": 0.926
+            }
+          ],
+          "top_negative": []
+        }
+      },
+      "health": {
+        "overall": 74.3,
+        "pillars": {
+          "Growth": 79.5,
+          "Profitability": 98.6,
+          "Cash generation": 80.6,
+          "Liquidity": 40.8,
+          "Leverage": 72.1
+        },
+        "metrics": {
+          "revenue_yoy": 0.09628455180293086,
+          "eps_yoy": 0.12142857142857154,
+          "operating_margin_ttm": 0.31866381156316914,
+          "net_margin_ttm": 0.24296115019883757,
+          "fcf_margin_ttm": 0.23538452126032425,
+          "fcf_conversion_ttm": 0.9688154713940371,
+          "current_ratio": 0.8679917800453515,
+          "cash_to_current_liabilities": 0.9423611111111111,
+          "debt_to_equity": 1.5448579674920249,
+          "debt_to_ocf_ttm": 0.9367475705798369
+        },
+        "metric_scores": {
+          "revenue_yoy": 78.5,
+          "eps_yoy": 80.4,
+          "operating_margin_ttm": 100.0,
+          "net_margin_ttm": 97.2,
+          "fcf_margin_ttm": 94.2,
+          "fcf_conversion_ttm": 67.0,
+          "current_ratio": 24.5,
+          "cash_to_current_liabilities": 57.1,
+          "debt_to_equity": 53.9,
+          "debt_to_ocf_ttm": 90.3
+        },
+        "band": "Healthy"
+      },
+      "piotroski": {
+        "score": 7,
+        "available": 9,
+        "signals": [
+          {
+            "group": "Profitability",
+            "signal": "Positive return on assets (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Positive operating cash flow (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Return on assets improved vs a year ago",
+            "pass": false
+          },
+          {
+            "group": "Profitability",
+            "signal": "Cash flow exceeds net income (earnings quality)",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Long-term debt / assets decreased",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Current ratio improved",
+            "pass": false
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "No net new shares issued",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Gross margin improved (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Asset turnover improved (TTM)",
+            "pass": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "FY2025 Q4",
+      "period_end": "2025-09-27",
+      "form": "10-K",
+      "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+      "press_release_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000077/a8-kex991q4202509272025.htm",
+      "sentiment": {
+        "mdna": {
+          "section": "mdna",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "n_sentences": 91,
+          "lm": {
+            "words": 2205,
+            "positive": 14,
+            "negative": 21,
+            "uncertainty": 28,
+            "litigious": 12,
+            "constraining": 28,
+            "net_tone": -0.2,
+            "positive_pct": 0.6349206349206349,
+            "negative_pct": 0.9523809523809523,
+            "uncertainty_pct": 1.2698412698412698,
+            "litigious_pct": 0.54421768707483,
+            "constraining_pct": 1.2698412698412698
+          },
+          "finbert": {
+            "score": 0.03417642052275139,
+            "positive_share": 0.18681318681318682,
+            "negative_share": 0.15384615384615385,
+            "neutral_share": 0.6593406593406593,
+            "sentences_scored": 91
+          },
+          "top_positive": [
+            {
+              "text": "Europe net sales increased during 2025 compared to 2024 primarily due to higher net sales of Services, iPhone and Mac.",
+              "score": 0.941
+            },
+            {
+              "text": "Americas net sales increased during 2025 compared to 2024 primarily due to higher net sales of iPhone and Services.",
+              "score": 0.939
+            },
+            {
+              "text": "Japan net sales increased during 2025 compared to 2024 primarily due to higher net sales of iPhone, Services and iPad.",
+              "score": 0.938
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "Wearables, Home and Accessories net sales decreased during 2025 compared to 2024 primarily due to lower net sales of Accessories and Wearables.",
+              "score": -0.963
+            },
+            {
+              "text": "Greater China net sales decreased during 2025 compared to 2024 primarily due to lower net sales of iPhone, partially offset by higher net sales of Mac.",
+              "score": -0.958
+            },
+            {
+              "text": "Products gross margin percentage decreased during 2025 compared to 2024 primarily due to a different mix of products and tariff costs, partially offset by other favorable costs.",
+              "score": -0.957
+            }
+          ]
+        },
+        "risk": {
+          "section": "risk",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "n_sentences": 313,
+          "lm": {
+            "words": 9950,
+            "positive": 58,
+            "negative": 470,
+            "uncertainty": 260,
+            "litigious": 163,
+            "constraining": 114,
+            "net_tone": -0.7803030303030303,
+            "positive_pct": 0.5829145728643216,
+            "negative_pct": 4.723618090452261,
+            "uncertainty_pct": 2.613065326633166,
+            "litigious_pct": 1.6381909547738693,
+            "constraining_pct": 1.1457286432160805
+          },
+          "finbert": null,
+          "top_positive": [
+            {
+              "text": "The Company believes that its distinctive and inclusive culture is a significant driver of its success.",
+              "score": 1.25
+            },
+            {
+              "text": "The Company\u2019s ability to compete successfully also depends on the effective protection and enforcement of its intellectual property rights.",
+              "score": 1.0
+            },
+            {
+              "text": "Additionally, they may require the Company to share its innovations with competitors.",
+              "score": 0.833
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "The DMA provides for significant fines and penalties for noncompliance.",
+              "score": -3.0
+            },
+            {
+              "text": "If disputes and conflicts further escalate, actions by governments in response could be significantly more severe and restrictive.",
+              "score": -2.222
+            },
+            {
+              "text": "Regardless of the merit of particular claims, defending against litigation or responding to government investigations can be expensive, time-consuming and disruptive to the Company\u2019s operations.",
+              "score": -2.222
+            }
+          ]
+        },
+        "press": {
+          "section": "press",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000077/a8-kex991q4202509272025.htm",
+          "n_sentences": 20,
+          "lm": {
+            "words": 402,
+            "positive": 4,
+            "negative": 0,
+            "uncertainty": 1,
+            "litigious": 2,
+            "constraining": 0,
+            "net_tone": 1.0,
+            "positive_pct": 0.9950248756218906,
+            "negative_pct": 0.0,
+            "uncertainty_pct": 0.24875621890547264,
+            "litigious_pct": 0.4975124378109453,
+            "constraining_pct": 0.0
+          },
+          "finbert": {
+            "score": 0.33659325879998503,
+            "positive_share": 0.4,
+            "negative_share": 0.0,
+            "neutral_share": 0.6,
+            "sentences_scored": 20
+          },
+          "top_positive": [
+            {
+              "text": "Diluted earnings per share was $1.85, up 13 percent year over year on an adjusted basis. 1",
+              "score": 0.937
+            },
+            {
+              "text": "\u201cAnd thanks to our very high levels of customer satisfaction and loyalty, our installed base of active devices also reached a new all-time high across all product categories and geographic segments.\u201d",
+              "score": 0.936
+            },
+            {
+              "text": "The Company posted quarterly revenue of $102.5 billion, up 8 percent year over year.",
+              "score": 0.936
+            }
+          ],
+          "top_negative": []
+        }
+      },
+      "health": {
+        "overall": 74.6,
+        "pillars": {
+          "Growth": 85.9,
+          "Profitability": 100.0,
+          "Cash generation": 74.7,
+          "Liquidity": 36.1,
+          "Leverage": 76.5
+        },
+        "metrics": {
+          "revenue_yoy": 0.07938480985989677,
+          "eps_yoy": 0.8969072164948457,
+          "operating_margin_ttm": 0.31970799762591884,
+          "net_margin_ttm": 0.2691506412181824,
+          "fcf_margin_ttm": 0.23732882225869315,
+          "fcf_conversion_ttm": 0.8817694848674226,
+          "current_ratio": 0.8932929222186667,
+          "cash_to_current_liabilities": 0.7994880185472526,
+          "debt_to_equity": 1.3380304612588665,
+          "debt_to_ocf_ttm": 0.8849590068351841
+        },
+        "metric_scores": {
+          "revenue_yoy": 71.8,
+          "eps_yoy": 100.0,
+          "operating_margin_ttm": 100.0,
+          "net_margin_ttm": 100.0,
+          "fcf_margin_ttm": 94.9,
+          "fcf_conversion_ttm": 54.5,
+          "current_ratio": 26.2,
+          "cash_to_current_liabilities": 46.1,
+          "debt_to_equity": 61.6,
+          "debt_to_ocf_ttm": 91.4
+        },
+        "band": "Healthy"
+      },
+      "piotroski": {
+        "score": 8,
+        "available": 9,
+        "signals": [
+          {
+            "group": "Profitability",
+            "signal": "Positive return on assets (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Positive operating cash flow (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Return on assets improved vs a year ago",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Cash flow exceeds net income (earnings quality)",
+            "pass": false
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Long-term debt / assets decreased",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Current ratio improved",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "No net new shares issued",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Gross margin improved (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Asset turnover improved (TTM)",
+            "pass": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "FY2026 Q1",
+      "period_end": "2025-12-27",
+      "form": "10-Q",
+      "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000006/aapl-20251227.htm",
+      "press_release_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000005/a8-kex991q1202612272025.htm",
+      "sentiment": {
+        "mdna": {
+          "section": "mdna",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000006/aapl-20251227.htm",
+          "n_sentences": 81,
+          "lm": {
+            "words": 2290,
+            "positive": 13,
+            "negative": 22,
+            "uncertainty": 30,
+            "litigious": 10,
+            "constraining": 27,
+            "net_tone": -0.2571428571428571,
+            "positive_pct": 0.5676855895196506,
+            "negative_pct": 0.9606986899563319,
+            "uncertainty_pct": 1.3100436681222707,
+            "litigious_pct": 0.4366812227074236,
+            "constraining_pct": 1.1790393013100438
+          },
+          "finbert": {
+            "score": 0.030867530216957317,
+            "positive_share": 0.20987654320987653,
+            "negative_share": 0.19753086419753085,
+            "neutral_share": 0.5925925925925926,
+            "sentences_scored": 81
+          },
+          "top_positive": [
+            {
+              "text": "Europe net sales increased during the first quarter of 2026 compared to the same quarter in 2025 primarily due to higher net sales of iPhone and Services.",
+              "score": 0.937
+            },
+            {
+              "text": "Americas net sales increased during the first quarter of 2026 compared to the same quarter in 2025 primarily due to higher net sales of iPhone and Services.",
+              "score": 0.934
+            },
+            {
+              "text": "Greater China net sales increased during the first quarter of 2026 compared to the same quarter in 2025 due to higher net sales of iPhone.",
+              "score": 0.934
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "Mac net sales decreased during the first quarter of 2026 compared to the same quarter in 2025 primarily due to lower net sales of laptops and desktops.",
+              "score": -0.967
+            },
+            {
+              "text": "Wearables, Home and Accessories net sales decreased during the first quarter of 2026 compared to the same quarter in 2025 primarily due to lower net sales of Wearables.",
+              "score": -0.965
+            },
+            {
+              "text": "The weakness in the yen relative to the U.S. dollar had an unfavorable year-over-year impact on Japan net sales during the first quarter of 2026.",
+              "score": -0.955
+            }
+          ]
+        },
+        "risk": {
+          "section": "risk",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000006/aapl-20251227.htm",
+          "n_sentences": 1,
+          "lm": {
+            "words": 62,
+            "positive": 0,
+            "negative": 1,
+            "uncertainty": 3,
+            "litigious": 0,
+            "constraining": 0,
+            "net_tone": -1.0,
+            "positive_pct": 0.0,
+            "negative_pct": 1.6129032258064515,
+            "uncertainty_pct": 4.838709677419355,
+            "litigious_pct": 0.0,
+            "constraining_pct": 0.0
+          },
+          "finbert": null,
+          "top_positive": [],
+          "top_negative": []
+        },
+        "press": {
+          "section": "press",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000005/a8-kex991q1202612272025.htm",
+          "n_sentences": 17,
+          "lm": {
+            "words": 327,
+            "positive": 9,
+            "negative": 1,
+            "uncertainty": 3,
+            "litigious": 1,
+            "constraining": 0,
+            "net_tone": 0.8,
+            "positive_pct": 2.7522935779816513,
+            "negative_pct": 0.3058103975535168,
+            "uncertainty_pct": 0.9174311926605505,
+            "litigious_pct": 0.3058103975535168,
+            "constraining_pct": 0.0
+          },
+          "finbert": {
+            "score": 0.42938751667080555,
+            "positive_share": 0.47058823529411764,
+            "negative_share": 0.0,
+            "neutral_share": 0.5294117647058824,
+            "sentences_scored": 17
+          },
+          "top_positive": [
+            {
+              "text": "The Company posted quarterly revenue of $143.8 billion, up 16 percent year over year.",
+              "score": 0.936
+            },
+            {
+              "text": "Diluted earnings per share was $2.84, up 19 percent year over year.",
+              "score": 0.933
+            },
+            {
+              "text": "\u201cDuring the December quarter, our record business performance and strong margins led to EPS growth of 19 percent, setting a new all-time EPS record,\u201d said Kevan Parekh, Apple\u2019s CFO.",
+              "score": 0.933
+            }
+          ],
+          "top_negative": []
+        }
+      },
+      "health": {
+        "overall": 82.8,
+        "pillars": {
+          "Growth": 97.9,
+          "Profitability": 100.0,
+          "Cash generation": 89.1,
+          "Liquidity": 42.4,
+          "Leverage": 84.7
+        },
+        "metrics": {
+          "revenue_yoy": 0.15652453740949315,
+          "eps_yoy": 0.18333333333333332,
+          "operating_margin_ttm": 0.3238395195779779,
+          "net_margin_ttm": 0.27036823631768275,
+          "fcf_margin_ttm": 0.28310189914535017,
+          "fcf_conversion_ttm": 1.0470974808324205,
+          "current_ratio": 0.9737446648641658,
+          "cash_to_current_liabilities": 0.8917760382343702,
+          "debt_to_equity": 1.0262954983558226,
+          "debt_to_ocf_ttm": 0.6681011574347466
+        },
+        "metric_scores": {
+          "revenue_yoy": 100.0,
+          "eps_yoy": 95.8,
+          "operating_margin_ttm": 100.0,
+          "net_margin_ttm": 100.0,
+          "fcf_margin_ttm": 100.0,
+          "fcf_conversion_ttm": 78.2,
+          "current_ratio": 31.6,
+          "cash_to_current_liabilities": 53.2,
+          "debt_to_equity": 73.1,
+          "debt_to_ocf_ttm": 96.3
+        },
+        "band": "Strong"
+      },
+      "piotroski": {
+        "score": 9,
+        "available": 9,
+        "signals": [
+          {
+            "group": "Profitability",
+            "signal": "Positive return on assets (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Positive operating cash flow (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Return on assets improved vs a year ago",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Cash flow exceeds net income (earnings quality)",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Long-term debt / assets decreased",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Current ratio improved",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "No net new shares issued",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Gross margin improved (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Asset turnover improved (TTM)",
+            "pass": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "FY2026 Q2",
+      "period_end": "2026-03-28",
+      "form": "10-Q",
+      "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm",
+      "press_release_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000011/a8-kex991q2202603282026.htm",
+      "sentiment": {
+        "mdna": {
+          "section": "mdna",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm",
+          "n_sentences": 95,
+          "lm": {
+            "words": 2815,
+            "positive": 25,
+            "negative": 25,
+            "uncertainty": 32,
+            "litigious": 13,
+            "constraining": 31,
+            "net_tone": 0.0,
+            "positive_pct": 0.8880994671403197,
+            "negative_pct": 0.8880994671403197,
+            "uncertainty_pct": 1.1367673179396092,
+            "litigious_pct": 0.46181172291296624,
+            "constraining_pct": 1.1012433392539964
+          },
+          "finbert": {
+            "score": 0.06552064826613978,
+            "positive_share": 0.2631578947368421,
+            "negative_share": 0.21052631578947367,
+            "neutral_share": 0.5263157894736842,
+            "sentences_scored": 95
+          },
+          "top_positive": [
+            {
+              "text": "Greater China net sales increased during the second quarter and first six months of 2026 compared to the same periods in 2025 due to higher net sales of iPhone.",
+              "score": 0.933
+            },
+            {
+              "text": "iPhone net sales increased during the second quarter and first six months of 2026 compared to the same periods in 2025 due to higher net sales of Pro models.",
+              "score": 0.933
+            },
+            {
+              "text": "Europe net sales increased during the second quarter and first six months of 2026 compared to the same periods in 2025 primarily due to higher net sales of iPhone and Services.",
+              "score": 0.933
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "The weakness in the yen relative to the U.S. dollar had an unfavorable year-over-year impact on Japan net sales during the first six months of 2026.",
+              "score": -0.955
+            },
+            {
+              "text": "The timing of product introductions can also impact the Company\u2019s net sales to its indirect distribution channels as these channels are filled with new inventory following a product launch, and channel inventory of an older product often declines as the launch of a newer product approaches.",
+              "score": -0.949
+            },
+            {
+              "text": "Trade and other international disputes can have an adverse impact on the overall macroeconomic environment and result in shifts and reductions in consumer spending and negative consumer sentiment for the Company\u2019s products and services, all of which can further adversely affect the Company\u2019s business and results of operations.",
+              "score": -0.947
+            }
+          ]
+        },
+        "risk": {
+          "section": "risk",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm",
+          "n_sentences": 98,
+          "lm": {
+            "words": 3205,
+            "positive": 11,
+            "negative": 200,
+            "uncertainty": 73,
+            "litigious": 85,
+            "constraining": 43,
+            "net_tone": -0.8957345971563981,
+            "positive_pct": 0.34321372854914195,
+            "negative_pct": 6.240249609984399,
+            "uncertainty_pct": 2.277691107644306,
+            "litigious_pct": 2.65210608424337,
+            "constraining_pct": 1.3416536661466458
+          },
+          "finbert": null,
+          "top_positive": [],
+          "top_negative": [
+            {
+              "text": "The DMA provides for significant fines and penalties for noncompliance.",
+              "score": -3.0
+            },
+            {
+              "text": "Noncompliance could result in suspension or revocation of business licenses, significant penalties and legal liability.",
+              "score": -2.667
+            },
+            {
+              "text": "Component defects could make the Company\u2019s products unsafe and create a risk of environmental or property damage and personal injury.",
+              "score": -1.905
+            }
+          ]
+        },
+        "press": {
+          "section": "press",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000011/a8-kex991q2202603282026.htm",
+          "n_sentences": 19,
+          "lm": {
+            "words": 369,
+            "positive": 8,
+            "negative": 0,
+            "uncertainty": 3,
+            "litigious": 1,
+            "constraining": 0,
+            "net_tone": 1.0,
+            "positive_pct": 2.168021680216802,
+            "negative_pct": 0.0,
+            "uncertainty_pct": 0.8130081300813008,
+            "litigious_pct": 0.27100271002710025,
+            "constraining_pct": 0.0
+          },
+          "finbert": {
+            "score": 0.4873899335139676,
+            "positive_share": 0.5789473684210527,
+            "negative_share": 0.0,
+            "neutral_share": 0.42105263157894735,
+            "sentences_scored": 19
+          },
+          "top_positive": [
+            {
+              "text": "The Company posted quarterly revenue of $111.2 billion, up 17 percent year over year.",
+              "score": 0.936
+            },
+            {
+              "text": "\u201cContinued strong customer demand for our products and services once again helped us achieve a new all-time high for our installed base of active devices across all major product categories and geographic segments.\u201d",
+              "score": 0.936
+            },
+            {
+              "text": "Diluted earnings per share was $2.01, up 22 percent year over year.",
+              "score": 0.933
+            }
+          ],
+          "top_negative": []
+        }
+      },
+      "health": {
+        "overall": 86.5,
+        "pillars": {
+          "Growth": 100.0,
+          "Profitability": 100.0,
+          "Cash generation": 89.5,
+          "Liquidity": 53.2,
+          "Leverage": 89.7
+        },
+        "metrics": {
+          "revenue_yoy": 0.16595182415922985,
+          "eps_yoy": 0.21818181818181812,
+          "operating_margin_ttm": 0.32643396050876966,
+          "net_margin_ttm": 0.2715188219084622,
+          "fcf_margin_ttm": 0.28613642505571035,
+          "fcf_conversion_ttm": 1.0538364266775444,
+          "current_ratio": 1.07035746912159,
+          "cash_to_current_liabilities": 1.088784248483003,
+          "debt_to_equity": 0.7954756740006198,
+          "debt_to_ocf_ttm": 0.6041206087489838
+        },
+        "metric_scores": {
+          "revenue_yoy": 100.0,
+          "eps_yoy": 100.0,
+          "operating_margin_ttm": 100.0,
+          "net_margin_ttm": 100.0,
+          "fcf_margin_ttm": 100.0,
+          "fcf_conversion_ttm": 79.1,
+          "current_ratio": 38.0,
+          "cash_to_current_liabilities": 68.4,
+          "debt_to_equity": 81.6,
+          "debt_to_ocf_ttm": 97.7
+        },
+        "band": "Strong"
+      },
+      "piotroski": {
+        "score": 9,
+        "available": 9,
+        "signals": [
+          {
+            "group": "Profitability",
+            "signal": "Positive return on assets (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Positive operating cash flow (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Return on assets improved vs a year ago",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Cash flow exceeds net income (earnings quality)",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Long-term debt / assets decreased",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Current ratio improved",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "No net new shares issued",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Gross margin improved (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Asset turnover improved (TTM)",
+            "pass": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "FY2026 Q3",
+      "period_end": "2026-06-27",
+      "form": "10-Q",
+      "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000020/aapl-20260627.htm",
+      "press_release_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000018/a8-kex991q3202606272026.htm",
+      "sentiment": {
+        "mdna": {
+          "section": "mdna",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000020/aapl-20260627.htm",
+          "n_sentences": 95,
+          "lm": {
+            "words": 2770,
+            "positive": 21,
+            "negative": 26,
+            "uncertainty": 33,
+            "litigious": 13,
+            "constraining": 31,
+            "net_tone": -0.10638297872340426,
+            "positive_pct": 0.7581227436823105,
+            "negative_pct": 0.9386281588447654,
+            "uncertainty_pct": 1.1913357400722022,
+            "litigious_pct": 0.4693140794223827,
+            "constraining_pct": 1.1191335740072201
+          },
+          "finbert": {
+            "score": 0.05924322611015094,
+            "positive_share": 0.25263157894736843,
+            "negative_share": 0.21052631578947367,
+            "neutral_share": 0.5368421052631579,
+            "sentences_scored": 95
+          },
+          "top_positive": [
+            {
+              "text": "Europe net sales increased during the third quarter and first nine months of 2026 compared to the same periods in 2025 primarily due to higher net sales of iPhone, Services and Mac.",
+              "score": 0.934
+            },
+            {
+              "text": "Greater China net sales increased during the third quarter and first nine months of 2026 compared to the same periods in 2025 primarily due to higher net sales of iPhone.",
+              "score": 0.933
+            },
+            {
+              "text": "The strength in the renminbi relative to the U.S. dollar had a favorable year-over-year impact on Greater China net sales during the third quarter and first nine months of 2026.",
+              "score": 0.932
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "iPad net sales decreased during the third quarter of 2026 compared to the third quarter of 2025 primarily due to lower net sales of iPad mini \u00ae and iPad Air \u00ae .",
+              "score": -0.965
+            },
+            {
+              "text": "The weakness in the yen relative to the U.S. dollar had an unfavorable year-over-year impact on Japan net sales during the third quarter and first nine months of 2026.",
+              "score": -0.956
+            },
+            {
+              "text": "The timing of product introductions can also impact the Company\u2019s net sales to its indirect distribution channels as these channels are filled with new inventory following a product launch, and channel inventory of an older product often declines as the launch of a newer product approaches.",
+              "score": -0.949
+            }
+          ]
+        },
+        "risk": {
+          "section": "risk",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000020/aapl-20260627.htm",
+          "n_sentences": 83,
+          "lm": {
+            "words": 2834,
+            "positive": 9,
+            "negative": 112,
+            "uncertainty": 63,
+            "litigious": 77,
+            "constraining": 55,
+            "net_tone": -0.8512396694214877,
+            "positive_pct": 0.3175723359209598,
+            "negative_pct": 3.952011291460833,
+            "uncertainty_pct": 2.223006351446718,
+            "litigious_pct": 2.7170077628793226,
+            "constraining_pct": 1.9407198306280875
+          },
+          "finbert": null,
+          "top_positive": [
+            {
+              "text": "The Company relies on the continued availability and development of compelling and innovative software applications for its products.",
+              "score": 0.556
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "The DMA provides for significant fines and penalties for noncompliance.",
+              "score": -3.0
+            },
+            {
+              "text": "Noncompliance could result in suspension or revocation of business licenses, significant penalties and legal liability.",
+              "score": -2.667
+            },
+            {
+              "text": "For example, the Company is subject to civil antitrust lawsuits in the U.S. alleging monopolization or attempted monopolization in the markets for \u201cperformance smartphones\u201d and \u201csmartphones\u201d generally in violation of U.S. antitrust laws.",
+              "score": -1.714
+            }
+          ]
+        },
+        "press": {
+          "section": "press",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000018/a8-kex991q3202606272026.htm",
+          "n_sentences": 17,
+          "lm": {
+            "words": 314,
+            "positive": 5,
+            "negative": 0,
+            "uncertainty": 2,
+            "litigious": 1,
+            "constraining": 0,
+            "net_tone": 1.0,
+            "positive_pct": 1.5923566878980893,
+            "negative_pct": 0.0,
+            "uncertainty_pct": 0.6369426751592356,
+            "litigious_pct": 0.3184713375796178,
+            "constraining_pct": 0.0
+          },
+          "finbert": {
+            "score": 0.4075599821174846,
+            "positive_share": 0.47058823529411764,
+            "negative_share": 0.0,
+            "neutral_share": 0.5294117647058824,
+            "sentences_scored": 17
+          },
+          "top_positive": [
+            {
+              "text": "The Company posted quarterly revenue of $109.4 billion, up 16 percent year over year.",
+              "score": 0.937
+            },
+            {
+              "text": "Diluted earnings per share was $2.02, up 29 percent year over year, and included a favorable impact of $0.11 from tariff refunds.",
+              "score": 0.935
+            },
+            {
+              "text": "\u201cOur installed base of active devices also reached a new all-time high across all major product categories and geographic segments.\u201d",
+              "score": 0.933
+            }
+          ],
+          "top_negative": []
+        }
+      },
+      "health": {
+        "overall": 85.4,
+        "pillars": {
+          "Growth": 100.0,
+          "Profitability": 100.0,
+          "Cash generation": 90.0,
+          "Liquidity": 46.9,
+          "Leverage": 90.2
+        },
+        "metrics": {
+          "revenue_yoy": 0.1635650176528138,
+          "eps_yoy": 0.286624203821656,
+          "operating_margin_ttm": 0.3317295848747812,
+          "net_margin_ttm": 0.27618604910212224,
+          "fcf_margin_ttm": 0.2927940568480987,
+          "fcf_conversion_ttm": 1.0601334057240364,
+          "current_ratio": 1.0032948046555858,
+          "cash_to_current_liabilities": 0.9811888083789829,
+          "debt_to_equity": 0.7844494047619047,
+          "debt_to_ocf_ttm": 0.57484801395818
+        },
+        "metric_scores": {
+          "revenue_yoy": 100.0,
+          "eps_yoy": 100.0,
+          "operating_margin_ttm": 100.0,
+          "net_margin_ttm": 100.0,
+          "fcf_margin_ttm": 100.0,
+          "fcf_conversion_ttm": 80.0,
+          "current_ratio": 33.6,
+          "cash_to_current_liabilities": 60.1,
+          "debt_to_equity": 82.1,
+          "debt_to_ocf_ttm": 98.3
+        },
+        "band": "Strong"
+      },
+      "piotroski": {
+        "score": 9,
+        "available": 9,
+        "signals": [
+          {
+            "group": "Profitability",
+            "signal": "Positive return on assets (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Positive operating cash flow (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Return on assets improved vs a year ago",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Cash flow exceeds net income (earnings quality)",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Long-term debt / assets decreased",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Current ratio improved",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "No net new shares issued",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Gross margin improved (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Asset turnover improved (TTM)",
+            "pass": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "FY2026 Q4",
+      "period_end": "2026-09-26",
+      "form": "10-K",
+      "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000026/aapl-20260926.htm",
+      "press_release_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000024/a8-kex991q4202609262026.htm",
+      "sentiment": {
+        "mdna": {
+          "section": "mdna",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000026/aapl-20260926.htm",
+          "n_sentences": 93,
+          "lm": {
+            "words": 2165,
+            "positive": 14,
+            "negative": 25,
+            "uncertainty": 29,
+            "litigious": 11,
+            "constraining": 27,
+            "net_tone": -0.28205128205128205,
+            "positive_pct": 0.6466512702078522,
+            "negative_pct": 1.1547344110854503,
+            "uncertainty_pct": 1.3394919168591224,
+            "litigious_pct": 0.5080831408775982,
+            "constraining_pct": 1.2471131639722863
+          },
+          "finbert": {
+            "score": 0.09741546449962482,
+            "positive_share": 0.24731182795698925,
+            "negative_share": 0.13978494623655913,
+            "neutral_share": 0.6129032258064516,
+            "sentences_scored": 93
+          },
+          "top_positive": [
+            {
+              "text": "Europe net sales increased during 2026 compared to 2025 primarily due to higher net sales of iPhone, Services and Mac.",
+              "score": 0.94
+            },
+            {
+              "text": "Greater China net sales increased during 2026 compared to 2025 primarily due to higher net sales of iPhone and Mac.",
+              "score": 0.939
+            },
+            {
+              "text": "Americas net sales increased during 2026 compared to 2025 due to higher net sales of iPhone, Services and Mac.",
+              "score": 0.938
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "The Company is experiencing supply constraints and rising costs driven by industry-wide supply-demand imbalances for key components, including advanced semiconductors, memory and storage.",
+              "score": -0.957
+            },
+            {
+              "text": "The weakness in the yen relative to the U.S. dollar had an unfavorable year-over-year impact on Japan net sales during 2026.",
+              "score": -0.954
+            },
+            {
+              "text": "Trade and other international disputes can have an adverse impact on the overall macroeconomic environment and result in shifts and reductions in consumer spending and negative consumer sentiment for the Company\u2019s products and services, all of which can further adversely affect the Company\u2019s business, results of operations and financial condition.",
+              "score": -0.946
+            }
+          ]
+        },
+        "risk": {
+          "section": "risk",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000026/aapl-20260926.htm",
+          "n_sentences": 387,
+          "lm": {
+            "words": 12488,
+            "positive": 75,
+            "negative": 627,
+            "uncertainty": 332,
+            "litigious": 267,
+            "constraining": 156,
+            "net_tone": -0.7863247863247863,
+            "positive_pct": 0.6005765534913518,
+            "negative_pct": 5.0208199871877,
+            "uncertainty_pct": 2.6585522101217167,
+            "litigious_pct": 2.138052530429212,
+            "constraining_pct": 1.2491992312620115
+          },
+          "finbert": null,
+          "top_positive": [
+            {
+              "text": "The Company believes that its distinctive and inclusive culture is a significant driver of its success.",
+              "score": 1.25
+            },
+            {
+              "text": "The Company\u2019s ability to compete successfully also depends on the effective protection and enforcement of its intellectual property rights.",
+              "score": 1.0
+            },
+            {
+              "text": "The Company\u2019s ability to compete successfully depends heavily on ensuring the continuing and timely introduction of innovative new products, services and technologies.",
+              "score": 0.87
+            }
+          ],
+          "top_negative": [
+            {
+              "text": "The DMA provides for significant fines and penalties for noncompliance.",
+              "score": -3.0
+            },
+            {
+              "text": "Potential outcomes include financial instability, inability to obtain credit, and insolvency.",
+              "score": -2.727
+            },
+            {
+              "text": "Noncompliance could result in suspension or revocation of business licenses, significant penalties and legal liability.",
+              "score": -2.667
+            }
+          ]
+        },
+        "press": {
+          "section": "press",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000024/a8-kex991q4202609262026.htm",
+          "n_sentences": 22,
+          "lm": {
+            "words": 410,
+            "positive": 6,
+            "negative": 1,
+            "uncertainty": 2,
+            "litigious": 1,
+            "constraining": 0,
+            "net_tone": 0.7142857142857143,
+            "positive_pct": 1.4634146341463414,
+            "negative_pct": 0.24390243902439024,
+            "uncertainty_pct": 0.4878048780487805,
+            "litigious_pct": 0.24390243902439024,
+            "constraining_pct": 0.0
+          },
+          "finbert": {
+            "score": 0.46292498585006053,
+            "positive_share": 0.5,
+            "negative_share": 0.0,
+            "neutral_share": 0.5,
+            "sentences_scored": 22
+          },
+          "top_positive": [
+            {
+              "text": "The Company posted quarterly revenue of $114.5 billion, up 12 percent year over year.",
+              "score": 0.936
+            },
+            {
+              "text": "Diluted earnings per share was $2.10, up 14 percent year over year, and included a favorable impact of $0.05 from tariff refunds.",
+              "score": 0.935
+            },
+            {
+              "text": "Thanks to our very high levels of customer satisfaction and loyalty, our installed base of active devices reached a new all-time high across all major product categories and geographic segments.\u201d",
+              "score": 0.932
+            }
+          ],
+          "top_negative": []
+        }
+      },
+      "health": {
+        "overall": 81.3,
+        "pillars": {
+          "Growth": 86.1,
+          "Profitability": 100.0,
+          "Cash generation": 87.8,
+          "Liquidity": 40.8,
+          "Leverage": 91.7
+        },
+        "metrics": {
+          "revenue_yoy": 0.11721937032771847,
+          "eps_yoy": 0.14130434782608733,
+          "operating_margin_ttm": 0.3300997840587761,
+          "net_margin_ttm": 0.27603511864236874,
+          "fcf_margin_ttm": 0.28414022396070454,
+          "fcf_conversion_ttm": 1.0293625874787213,
+          "current_ratio": 1.0231998352117235,
+          "cash_to_current_liabilities": 0.8059029514757379,
+          "debt_to_equity": 0.7146833432952995,
+          "debt_to_ocf_ttm": 0.5521203057265139
+        },
+        "metric_scores": {
+          "revenue_yoy": 86.9,
+          "eps_yoy": 85.3,
+          "operating_margin_ttm": 100.0,
+          "net_margin_ttm": 100.0,
+          "fcf_margin_ttm": 100.0,
+          "fcf_conversion_ttm": 75.6,
+          "current_ratio": 34.9,
+          "cash_to_current_liabilities": 46.6,
+          "debt_to_equity": 84.6,
+          "debt_to_ocf_ttm": 98.8
+        },
+        "band": "Strong"
+      },
+      "piotroski": {
+        "score": 9,
+        "available": 9,
+        "signals": [
+          {
+            "group": "Profitability",
+            "signal": "Positive return on assets (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Positive operating cash flow (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Return on assets improved vs a year ago",
+            "pass": true
+          },
+          {
+            "group": "Profitability",
+            "signal": "Cash flow exceeds net income (earnings quality)",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Long-term debt / assets decreased",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "Current ratio improved",
+            "pass": true
+          },
+          {
+            "group": "Leverage & liquidity",
+            "signal": "No net new shares issued",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Gross margin improved (TTM)",
+            "pass": true
+          },
+          {
+            "group": "Efficiency",
+            "signal": "Asset turnover improved (TTM)",
+            "pass": true
+          }
+        ]
+      }
+    }
+  ],
+  "financials": {
+    "FY2025 Q1": {
+      "period_end": "2024-12-28T00:00:00.000",
+      "revenue": 124300000000.0,
+      "gross_profit": 58275000000.0,
+      "operating_income": 42832000000.0,
+      "net_income": 36330000000.0,
+      "eps_diluted": 2.4,
+      "ocf": 29935000000.0,
+      "capex": 2940000000.0,
+      "fcf": 26995000000.0,
+      "cash": 30299000000.0,
+      "total_debt": 96799000000.0,
+      "net_cash": 44569000000.0,
+      "gross_margin": 0.4688254224,
+      "operating_margin": 0.3445856798,
+      "net_margin": 0.2922767498,
+      "revenue_yoy": 0.0395149488,
+      "eps_diluted_yoy": 0.1009174312,
+      "current_ratio": 0.9229383853,
+      "debt_to_equity": 1.4499985021
+    },
+    "FY2025 Q2": {
+      "period_end": "2025-03-29T00:00:00.000",
+      "revenue": 95359000000.0,
+      "gross_profit": 44867000000.0,
+      "operating_income": 29589000000.0,
+      "net_income": 24780000000.0,
+      "eps_diluted": 1.65,
+      "ocf": 23952000000.0,
+      "capex": 3071000000.0,
+      "fcf": 20881000000.0,
+      "cash": 28162000000.0,
+      "total_debt": 98186000000.0,
+      "net_cash": 34736000000.0,
+      "gross_margin": 0.4705061924,
+      "operating_margin": 0.3102905861,
+      "net_margin": 0.2598601076,
+      "revenue_yoy": 0.0507531431,
+      "eps_diluted_yoy": 0.0784313725,
+      "current_ratio": 0.8208700223,
+      "debt_to_equity": 1.4699383197
+    },
+    "FY2025 Q3": {
+      "period_end": "2025-06-28T00:00:00.000",
+      "revenue": 94036000000.0,
+      "gross_profit": 43718000000.0,
+      "operating_income": 28202000000.0,
+      "net_income": 23434000000.0,
+      "eps_diluted": 1.57,
+      "ocf": 27867000000.0,
+      "capex": 3462000000.0,
+      "fcf": 24405000000.0,
+      "cash": 36269000000.0,
+      "total_debt": 101698000000.0,
+      "net_cash": 31288000000.0,
+      "gross_margin": 0.4649070569,
+      "operating_margin": 0.2999064188,
+      "net_margin": 0.2492024331,
+      "revenue_yoy": 0.0962845518,
+      "eps_diluted_yoy": 0.1214285714,
+      "current_ratio": 0.86799178,
+      "debt_to_equity": 1.5448579675
+    },
+    "FY2025 Q4": {
+      "period_end": "2025-09-27T00:00:00.000",
+      "revenue": 102466000000.0,
+      "gross_profit": 48341000000.0,
+      "operating_income": 32427000000.0,
+      "net_income": 27466000000.0,
+      "eps_diluted": 1.84,
+      "ocf": 29728000000.0,
+      "capex": 3242000000.0,
+      "fcf": 26486000000.0,
+      "cash": 35934000000.0,
+      "total_debt": 98657000000.0,
+      "net_cash": 33763000000.0,
+      "gross_margin": 0.4717760037,
+      "operating_margin": 0.3164659497,
+      "net_margin": 0.2680498897,
+      "revenue_yoy": 0.0793848099,
+      "eps_diluted_yoy": 0.8969072165,
+      "current_ratio": 0.8932929222,
+      "debt_to_equity": 1.3380304613
+    },
+    "FY2026 Q1": {
+      "period_end": "2025-12-27T00:00:00.000",
+      "revenue": 143756000000.0,
+      "gross_profit": 69231000000.0,
+      "operating_income": 50852000000.0,
+      "net_income": 42097000000.0,
+      "eps_diluted": 2.84,
+      "ocf": 53925000000.0,
+      "capex": 2373000000.0,
+      "fcf": 51552000000.0,
+      "cash": 45317000000.0,
+      "total_debt": 90509000000.0,
+      "net_cash": 54286000000.0,
+      "gross_margin": 0.4815868555,
+      "operating_margin": 0.3537382788,
+      "net_margin": 0.2928364729,
+      "revenue_yoy": 0.1565245374,
+      "eps_diluted_yoy": 0.1833333333,
+      "current_ratio": 0.9737446649,
+      "debt_to_equity": 1.0262954984
+    },
+    "FY2026 Q2": {
+      "period_end": "2026-03-28T00:00:00.000",
+      "revenue": 111184000000.0,
+      "gross_profit": 54781000000.0,
+      "operating_income": 35885000000.0,
+      "net_income": 29578000000.0,
+      "eps_diluted": 2.01,
+      "ocf": 28702000000.0,
+      "capex": 1971000000.0,
+      "fcf": 26731000000.0,
+      "cash": 45572000000.0,
+      "total_debt": 84711000000.0,
+      "net_cash": 61884000000.0,
+      "gross_margin": 0.492705785,
+      "operating_margin": 0.3227532739,
+      "net_margin": 0.266027486,
+      "revenue_yoy": 0.1659518242,
+      "eps_diluted_yoy": 0.2181818182,
+      "current_ratio": 1.0703574691,
+      "debt_to_equity": 0.795475674
+    },
+    "FY2026 Q3": {
+      "period_end": "2026-06-27T00:00:00.000",
+      "revenue": 109417000000.0,
+      "gross_profit": 54770000000.0,
+      "operating_income": 35695000000.0,
+      "net_income": 29789000000.0,
+      "eps_diluted": 2.02,
+      "ocf": 34369000000.0,
+      "capex": 2455000000.0,
+      "fcf": 31914000000.0,
+      "cash": 39544000000.0,
+      "total_debt": 84344000000.0,
+      "net_cash": 62173000000.0,
+      "gross_margin": 0.5005620699,
+      "operating_margin": 0.3262290138,
+      "net_margin": 0.2722520267,
+      "revenue_yoy": 0.1635650177,
+      "eps_diluted_yoy": 0.2866242038,
+      "current_ratio": 1.0032948047,
+      "debt_to_equity": 0.7844494048
+    },
+    "FY2026 Q4": {
+      "period_end": "2026-09-26T00:00:00.000",
+      "revenue": 114477000000.0,
+      "gross_profit": 54820000000.0,
+      "operating_income": 35631000000.0,
+      "net_income": 30711000000.0,
+      "eps_diluted": 2.1,
+      "ocf": 28101000000.0,
+      "capex": 2242000000.0,
+      "fcf": 25859000000.0,
+      "cash": 36305000000.0,
+      "total_debt": 80111000000.0,
+      "net_cash": 56824000000.0,
+      "gross_margin": 0.4788734855,
+      "operating_margin": 0.3112502948,
+      "net_margin": 0.2682722294,
+      "revenue_yoy": 0.1172193703,
+      "eps_diluted_yoy": 0.1413043478,
+      "current_ratio": 1.0231998352,
+      "debt_to_equity": 0.7146833433
+    }
+  },
+  "warnings": []
+}

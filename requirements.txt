@@ -1,0 +1,12 @@
+# Core app (dictionary sentiment, financials, dashboard, reports)
+streamlit>=1.50
+plotly>=6.0
+pandas>=2.2
+numpy>=1.26
+requests>=2.31
+beautifulsoup4>=4.12
+lxml>=5.0
+pysentiment2>=0.1.1        # bundles the Loughran-McDonald word lists
+matplotlib>=3.8
+fpdf2>=2.8
+jinja2>=3.1

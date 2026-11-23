@@ -1,0 +1,16 @@
+services:
+  dashboard:
+    build: .
+    image: earnings-sentiment
+    ports:
+      - "8501:8501"
+    environment:
+      # Read from your .env file (copy .env.example). Can also be typed in the sidebar.
+      SEC_USER_AGENT: ${SEC_USER_AGENT:-}
+    volumes:
+      - cache:/cache              # SEC downloads + FinBERT model survive restarts
+      - ./snapshots:/app/snapshots
+    restart: unless-stopped
+
+volumes:
+  cache:

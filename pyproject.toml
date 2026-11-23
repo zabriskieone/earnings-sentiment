@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "earnings-sentiment"
+version = "0.1.0"
+description = "Quarterly earnings sentiment and financial health analysis from SEC filings, with an interactive dashboard."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "streamlit>=1.50", "plotly>=6.0", "pandas>=2.2", "numpy>=1.26", "requests>=2.31",
+  "beautifulsoup4>=4.12", "lxml>=5.0", "pysentiment2>=0.1.1", "matplotlib>=3.8", "fpdf2>=2.8", "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+finbert = ["torch>=2.2", "transformers>=4.40"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+earnings-sentiment = "earnings_sentiment.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
