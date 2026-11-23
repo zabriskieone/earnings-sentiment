@@ -17,6 +17,7 @@ produced, with references so each step can be checked. The goal is
 | Filing history | `https://data.sec.gov/submissions/CIK##########.json` | 10-Q, 10-K, 8-K; older pages read when needed |
 | Financial statements | `https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json` | XBRL facts as tagged by the company |
 | Narrative text | The 10-Q / 10-K primary document, and Exhibit 99.1 of the Item 2.02 8-K | Downloaded from `www.sec.gov/Archives` |
+| Company logos (display only) | `https://financialmodelingprep.com/image-stock/<TICKER>.png` | Only the ticker is sent; cached in `data/cache/logos`; monogram fallback. Logos are trademarks of their owners |
 
 SEC API documentation: <https://www.sec.gov/search-filings/edgar-application-programming-interfaces>.
 
@@ -101,6 +102,9 @@ Steps:
    non-letters, e.g. page footers).
 4. Press releases: the forward-looking-statements boilerplate at the end is
    removed.
+
+Headings are matched loosely: some filings split a word across HTML tags (Microsoft's
+"RI SK FACTORS"), so stray spaces inside heading words are tolerated.
 
 A 10-Q risk-factor section that only says "no material changes" is short by
 design. The summary reports this, and risk sections are compared with the same

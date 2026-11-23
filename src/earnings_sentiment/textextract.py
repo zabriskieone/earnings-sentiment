@@ -19,22 +19,45 @@ warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 _APOS = "['’`]"
 
+
+def _loose(phrase: str) -> str:
+    """Regex for a heading phrase that tolerates stray spaces inside words.
+
+    Some filings split a word across HTML tags, so "RISK FACTORS" arrives as
+    "RI SK FACTORS" once converted to text.
+    """
+    out = []
+    for ch in phrase:
+        if ch == " ":
+            out.append(r"\s+")
+        elif ch == "'":
+            out.append(f"{_APOS}?")
+        else:
+            out.append(re.escape(ch) + r"\s*")
+    return "".join(out)
+
+
+def _item(num: str, title: str) -> str:
+    return rf"Item\s*{num}\s*\.?\s*[-–—:]?\s*{_loose(title)}"
+
+
 SECTION_PATTERNS = {
     ("10-Q", "mdna"): (
-        rf"Item\s*2\s*\.?\s*[-–—:]?\s*Management{_APOS}?s\s+Discussion",
-        r"Item\s*3\s*\.?\s*[-–—:]?\s*Quantitative|Item\s*4\s*\.?\s*[-–—:]?\s*Controls",
+        _item("2", "Management's Discussion"),
+        "|".join([_item("3", "Quantitative"), _item("4", "Controls")]),
     ),
     ("10-K", "mdna"): (
-        rf"Item\s*7\s*\.?\s*[-–—:]?\s*Management{_APOS}?s\s+Discussion",
-        r"Item\s*7A\s*\.?\s*[-–—:]?\s*Quantitative|Item\s*8\s*\.?\s*[-–—:]?\s*Financial\s+Statements",
+        _item("7", "Management's Discussion"),
+        "|".join([_item("7A", "Quantitative"), _item("8", "Financial Statements")]),
     ),
     ("10-Q", "risk"): (
-        r"Item\s*1A\s*\.?\s*[-–—:]?\s*Risk\s+Factors",
-        r"Item\s*2\s*\.?\s*[-–—:]?\s*Unregistered|Item\s*3\s*\.?\s*[-–—:]?\s*Defaults|Item\s*5\s*\.?\s*[-–—:]?\s*Other\s+Information|Item\s*6\s*\.?\s*[-–—:]?\s*Exhibits",
+        _item("1A", "Risk Factors"),
+        "|".join([_item("2", "Unregistered"), _item("3", "Defaults"), _item("5", "Other Information"),
+                  _item("6", "Exhibits")]),
     ),
     ("10-K", "risk"): (
-        r"Item\s*1A\s*\.?\s*[-–—:]?\s*Risk\s+Factors",
-        r"Item\s*1B\s*\.?\s*[-–—:]?\s*Unresolved|Item\s*1C\s*\.?\s*[-–—:]?\s*Cybersecurity|Item\s*2\s*\.?\s*[-–—:]?\s*Properties",
+        _item("1A", "Risk Factors"),
+        "|".join([_item("1B", "Unresolved"), _item("1C", "Cybersecurity"), _item("2", "Properties")]),
     ),
 }
 

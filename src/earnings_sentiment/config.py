@@ -45,7 +45,7 @@ COMPANY_DATA_TTL_HOURS = 12
 FINBERT_MODEL = os.environ.get("FINBERT_MODEL", "ProsusAI/finbert")
 
 # Bump when the scoring logic changes so cached sentiment is recomputed.
-SENTIMENT_VERSION = "1"
+SENTIMENT_VERSION = "2"
 
 
 def valid_user_agent(ua: str) -> bool:

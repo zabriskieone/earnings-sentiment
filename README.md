@@ -132,6 +132,8 @@ was read when it came out.
 
 Use the ☀️/🌙 icon at the top right to switch between light and dark mode.
 
+![Health tab in light mode](docs/images/dashboard-health-light.png)
+
 | Tab | Shows |
 |---|---|
 | **Overview** | KPIs with YoY change, "what changed" bullets, revenue and tone charts |
@@ -145,6 +147,7 @@ Use the ☀️/🌙 icon at the top right to switch between light and dark mode.
 * SEC EDGAR APIs — <https://www.sec.gov/search-filings/edgar-application-programming-interfaces>
 * 10-Q / 10-K: MD&A and Risk Factors sections
 * 8-K Item 2.02, Exhibit 99.1: earnings press release
+* Company logos: Financial Modeling Prep public image URL, by ticker (`financialmodelingprep.com/image-stock/<TICKER>.png`). Only the ticker is sent, logos are cached locally, and a monogram tile is shown when none exists
 
 **Methods** (full details and formulas in [docs/METHODOLOGY.md](docs/METHODOLOGY.md))
 

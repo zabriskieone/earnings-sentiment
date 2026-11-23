@@ -22,6 +22,7 @@ from .charts import NEGATIVE, POSITIVE, SERIES, all_charts  # noqa: E402
 from .health import METRIC_LABELS, PERCENT_METRICS  # noqa: E402
 from .narrative import build_insights, money, pct, verdict  # noqa: E402
 from .theme import APP_NAME, GRADIENT, TAGLINE  # noqa: E402
+from .logos import logo_html, logo_png  # noqa: E402
 
 DISCLAIMER = (
     "Hobby research tool. Automated text and ratio analysis of public SEC filings; "
@@ -49,16 +50,25 @@ def kpis(a: Analysis) -> list[dict]:
     ya = a.latest.fq.year_ago().label
     tone_ya = _f(st.loc[ya, "tone_index"]) if ya in st.index else None
     h = a.latest.health or {}
+    r_ya = fin.loc[ya] if ya in fin.index else {}
+    gm, gm_ya = _f(r["gross_margin"]), _f(r_ya.get("gross_margin")) if len(r_ya) else None
+    fcf, fcf_ya = _f(r.get("fcf_ttm")), _f(r_ya.get("fcf_ttm")) if len(r_ya) else None
+    ht = a.health_table()
+    h_ya = _f(ht.loc[ya, "overall"]) if ya in ht.index else None
+    hv = _f(h.get("overall"))
     return [
         {"name": "Revenue", "value": money(_f(r["revenue"])), "delta": pct(_f(r["revenue_yoy"])) + " YoY"},
         {"name": "Diluted EPS", "value": f"${_f(r['eps_diluted']):.2f}" if _f(r["eps_diluted"]) is not None else "n/a",
          "delta": pct(_f(r["eps_diluted_yoy"])) + " YoY"},
-        {"name": "Gross margin", "value": pct(_f(r["gross_margin"]), False), "delta": ""},
-        {"name": "Free cash flow (TTM)", "value": money(_f(r.get("fcf_ttm"))), "delta": ""},
+        {"name": "Gross margin", "value": pct(gm, False),
+         "delta": f"{(gm - gm_ya) * 100:+.1f} pts YoY" if gm is not None and gm_ya is not None else ""},
+        {"name": "Free cash flow (TTM)", "value": money(fcf),
+         "delta": pct((fcf - fcf_ya) / abs(fcf_ya)) + " YoY" if fcf is not None and fcf_ya else ""},
         {"name": "Tone index", "value": f"{tone:+.2f}" if tone is not None else "n/a",
          "delta": (f"{tone - tone_ya:+.2f} YoY" if tone is not None and tone_ya is not None else "")},
-        {"name": "Health score", "value": f"{h.get('overall'):.0f}/100" if h.get("overall") is not None else "n/a",
-         "delta": h.get("band", "")},
+        {"name": "Health score", "value": f"{hv:.0f}/100" if hv is not None else "n/a",
+         "delta": f"{hv - h_ya:+.0f} pts YoY" if hv is not None and h_ya is not None else h.get("band", ""),
+         "note": h.get("band", "")},
     ]
 
 
@@ -78,8 +88,6 @@ HTML_TEMPLATE = Template("""<!doctype html>
 <style>
 :root { --bg:#f9f9f7; --card:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --line:#e1e0d9;
         --good:#006300; --bad:#d03b3b; }
-@media (prefers-color-scheme: dark) { :root { --bg:#0d0d0d; --card:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7;
-        --line:#2c2c2a; --good:#0ca30c; --bad:#e66767; } }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
 main { max-width:1100px; margin:0 auto; padding:24px 16px 48px; }
@@ -108,14 +116,12 @@ th { color:var(--ink2); font-weight:600; }
 a { color:#2a78d6; word-break:break-all; }
 .note { color:var(--muted); font-size:13px; }
 @media (max-width:520px) { .grid2 { grid-template-columns:1fr; } }
-/* chart text follows the page theme (plotly writes fixed inline colors) */
-.js-plotly-plot .plotly .main-svg text { fill: var(--ink2) !important; }
-.js-plotly-plot .plotly .main-svg .gtitle { fill: var(--ink) !important; }
 </style></head><body><main>
-<div class="hero"><div class="brand">{{ app_name }} · {{ tagline }}</div>
+<div class="hero" style="display:flex;gap:18px;align-items:center;">{{ logo }}<div>
+<div class="brand">{{ app_name }} · {{ tagline }}</div>
 <h1>{{ a.company.name }} ({{ a.company.ticker }})</h1>
 <p class="sub">Quarterly results sentiment &amp; health report - latest quarter <b>{{ a.latest.fq.label }}</b>
-(period ended {{ a.latest.period_end }}) - generated {{ a.generated_at }}</p></div>
+(period ended {{ a.latest.period_end }}) - generated {{ a.generated_at }}</p></div></div>
 <div class="kpis">{% for k in kpis %}<div class="kpi"><div class="n">{{ k.name }}</div><div class="v">{{ k.value }}</div><div class="d">{{ k.delta }}</div></div>{% endfor %}</div>
 
 <h2>What changed</h2>
@@ -212,7 +218,7 @@ def build_html(a: Analysis, offline: bool = True) -> str:
         sections=SECTIONS, health=a.latest.health or {"metrics": {}, "metric_scores": {}},
         fscore=a.latest.fscore, metric_labels=METRIC_LABELS, metric_value=metric_value,
         table_html=f"<table><tr>{head}</tr>{body}</table>", sources=a.sources(), disclaimer=DISCLAIMER,
-        app_name=APP_NAME, tagline=TAGLINE, g=GRADIENT,
+        app_name=APP_NAME, tagline=TAGLINE, g=GRADIENT, logo=logo_html(a.company.ticker, 60, 16),
     )
 
 
@@ -228,68 +234,140 @@ def _ascii(s: str) -> str:
     return s.encode("latin-1", "replace").decode("latin-1")
 
 
-def _mpl_style(ax, title: str):
-    ax.set_title(title, loc="left", fontsize=10, color="#0b0b0b")
-    for side in ("top", "right"):
+def _mpl_style(ax, title: str, subtitle: str = ""):
+    ax.set_title(title, loc="left", fontsize=10.5, color="#1b1733", fontweight="bold", pad=18 if subtitle else 8)
+    if subtitle:
+        ax.text(0, 1.03, subtitle, transform=ax.transAxes, fontsize=7.5, color="#6b6788")
+    for side in ("top", "right", "left", "bottom"):
         ax.spines[side].set_visible(False)
-    for side in ("left", "bottom"):
-        ax.spines[side].set_color("#c3c2b7")
-    ax.tick_params(colors="#52514e", labelsize=7)
-    ax.grid(axis="y", color="#e1e0d9", linewidth=0.6)
+    ax.tick_params(colors="#6b6788", labelsize=7, length=0)
+    ax.grid(axis="y", color="#e9e5f7", linewidth=0.7, linestyle=(0, (2, 3)))
     ax.set_axisbelow(True)
 
 
 def _png(fig) -> io.BytesIO:
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=160, bbox_inches="tight", facecolor="white")
+    fig.savefig(buf, format="png", dpi=170, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     buf.seek(0)
     return buf
 
 
+def _round_bar(ax, x, height, width, color, bottom=0.0, zorder=2):
+    """Bar with a fully rounded end (capsule look), drawn as a fancy box."""
+    from matplotlib.patches import FancyBboxPatch
+
+    if height is None or height != height or height == 0:
+        return
+    ymin, ymax = ax.get_ylim()
+    xmin, xmax = ax.get_xlim()
+    bbox = ax.get_window_extent()
+    # rounding radius in data units, matched in both axes so the end is a semicircle
+    rx = width / 2
+    ry = rx * (ymax - ymin) / (xmax - xmin) * bbox.width / bbox.height
+    r = min(rx, abs(height) / 2)
+    patch = FancyBboxPatch((x - width / 2, min(bottom, bottom + height)), width, abs(height),
+                           boxstyle=f"round,pad=0,rounding_size={r}", mutation_aspect=ry / rx if rx else 1,
+                           linewidth=0, facecolor=color, zorder=zorder)
+    ax.add_patch(patch)
+
+
+def _smooth(xs, ys, n=24):
+    """Catmull-Rom spline through the points (no SciPy needed)."""
+    import numpy as np
+
+    pts = [(x, y) for x, y in zip(xs, ys) if y == y]
+    if len(pts) < 3:
+        return [p[0] for p in pts], [p[1] for p in pts]
+    P = np.array(pts, dtype=float)
+    P = np.vstack([P[0], P, P[-1]])
+    out = []
+    for i in range(1, len(P) - 2):
+        p0, p1, p2, p3 = P[i - 1], P[i], P[i + 1], P[i + 2]
+        for t in np.linspace(0, 1, n, endpoint=False):
+            t2, t3 = t * t, t * t * t
+            out.append(0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2
+                              + (-p0 + 3 * p1 - 3 * p2 + p3) * t3))
+    out.append(P[-2])
+    out = np.array(out)
+    return out[:, 0], out[:, 1]
+
+
+def _area_line(ax, x, y, color, label, fill=True):
+    sx, sy = _smooth(x, y)
+    ax.plot(sx, sy, color=color, lw=2.2, label=label, solid_capstyle="round", zorder=3)
+    if fill and len(sx):
+        ax.fill_between(sx, sy, min(0, min(sy)), color=color, alpha=0.12, linewidth=0, zorder=2)
+
+
 def _pdf_charts(a: Analysis) -> list[io.BytesIO]:
+    violet, amber, teal = SERIES
+    track = "#efecfa"
     labels = [q.fq.label for q in a.quarters if q.fq.label in a.financials.index]
-    short = [lbl.replace("FY20", "'").replace(" ", "\n") for lbl in labels]
+    short = [f"{lbl.split()[1]} '{lbl.split()[0][-2:]}" for lbl in labels]
     fin = a.financials.loc[labels]
-    st = a.sentiment_table().loc[[lbl for lbl in labels if lbl in a.sentiment_table().index]]
+    stab = a.sentiment_table()
+    st = stab.loc[[lbl for lbl in labels if lbl in stab.index]]
     ht = a.health_table()
-    x = range(len(labels))
+    x = list(range(len(labels)))
     out = []
 
-    fig, ax = plt.subplots(figsize=(7.2, 2.6))
-    w = 0.38
-    ax.bar([i - w / 2 for i in x], fin["revenue"] / 1e9, w, color=SERIES[0], label="Revenue")
-    ax.bar([i + w / 2 for i in x], fin["net_income"] / 1e9, w, color=SERIES[1], label="Net income")
-    ax.set_xticks(list(x), short)
-    ax.set_ylabel("US$ billions", fontsize=7, color="#52514e")
-    ax.legend(fontsize=7, frameon=False, ncol=2, loc="upper left")
-    _mpl_style(ax, "Revenue and net income per quarter")
+    # Revenue capsules on tracks, net income inside
+    fig, ax = plt.subplots(figsize=(7.2, 2.7))
+    rev, ni = (fin["revenue"] / 1e9).tolist(), (fin["net_income"] / 1e9).tolist()
+    top = max(rev) * 1.18
+    ax.set_xlim(-0.6, len(x) - 0.4)
+    ax.set_ylim(0, top * 1.05)
+    for i in x:
+        _round_bar(ax, i, top, 0.52, track, zorder=1)
+        _round_bar(ax, i, rev[i], 0.52, violet if i == x[-1] else "#b9a2f5", zorder=2)
+        _round_bar(ax, i, ni[i], 0.22, amber, zorder=3)
+    ax.text(x[-1], rev[-1] + top * 0.04, f"${rev[-1]:,.1f}B", ha="center", fontsize=7.5, color="white",
+            fontweight="bold", bbox=dict(boxstyle="round,pad=0.35", fc=violet, ec="none"), zorder=4)
+    ax.set_xticks(x, short)
+    from matplotlib.patches import Patch
+    ax.legend(handles=[Patch(color=violet, label="Revenue"), Patch(color=amber, label="Net income")],
+              fontsize=7, frameon=False, ncol=2, loc="lower right", bbox_to_anchor=(1, 1.0))
+    _mpl_style(ax, "Revenue & net income", "US$ billions · net income shown inside revenue")
     out.append(_png(fig))
 
+    # Margins as smooth lines with soft fill
     fig, ax = plt.subplots(figsize=(7.2, 2.6))
-    for i, (col, name) in enumerate((("gross_margin", "Gross"), ("operating_margin", "Operating"), ("net_margin", "Net"))):
-        ax.plot(list(x), fin[col] * 100, color=SERIES[i], lw=2, marker="o", ms=4, label=name)
-    ax.set_xticks(list(x), short)
-    ax.set_ylabel("% of revenue", fontsize=7, color="#52514e")
-    ax.legend(fontsize=7, frameon=False, ncol=3, loc="upper left")
-    _mpl_style(ax, "Margins")
+    for col, name, color, fill in (("gross_margin", "Gross", violet, True), ("operating_margin", "Operating", amber, False),
+                                   ("net_margin", "Net", teal, False)):
+        _area_line(ax, x, (fin[col] * 100).tolist(), color, name, fill)
+    ax.set_xticks(x, short)
+    ax.set_ylim(0, None)
+    ax.legend(fontsize=7, frameon=False, ncol=3, loc="lower right", bbox_to_anchor=(1, 1.0))
+    _mpl_style(ax, "Margins", "share of revenue kept at each level, %")
     out.append(_png(fig))
 
+    # Tone: diverging capsules on tracks
     fig, ax = plt.subplots(figsize=(7.2, 2.6))
-    tone = st["tone_index"].astype(float)
-    ax.bar(list(range(len(tone))), tone, color=[POSITIVE if v >= 0 else NEGATIVE for v in tone.fillna(0)])
-    ax.axhline(0, color="#898781", lw=0.8)
-    ax.set_xticks(list(range(len(tone))), [lbl.replace("FY20", "'").replace(" ", "\n") for lbl in st.index])
-    method = "FinBERT" if a.used_finbert else "LM net tone"
-    _mpl_style(ax, f"Management tone index ({method}, -1 to +1)")
+    tone = st["tone_index"].astype(float).tolist()
+    span = max(0.1, max(abs(v) for v in tone if v == v) * 1.3)
+    ax.set_xlim(-0.6, len(tone) - 0.4)
+    ax.set_ylim(-span * 1.05, span * 1.3)
+    for i, v in enumerate(tone):
+        _round_bar(ax, i, span, 0.3, track, zorder=1)
+        _round_bar(ax, i, -span, 0.3, track, zorder=1)
+        base = violet if (v or 0) >= 0 else NEGATIVE
+        _round_bar(ax, i, v, 0.3, base if i == len(tone) - 1 else (base + "99"), zorder=2)
+    ax.axhline(0, color="#c9c3e3", lw=0.8, zorder=1)
+    ax.set_xticks(range(len(tone)), [f"{lbl.split()[1]} '{lbl.split()[0][-2:]}" for lbl in st.index])
+    method = "FinBERT" if a.used_finbert else "dictionary"
+    _mpl_style(ax, "Management tone index", f"{method} · MD&A + press release · -1 to +1")
     out.append(_png(fig))
 
+    # Health trend
     fig, ax = plt.subplots(figsize=(7.2, 2.6))
     if not ht.empty:
-        ax.plot(list(range(len(ht))), ht["overall"], color=SERIES[0], lw=2, marker="o", ms=4, label="Health score")
-        ax.set_xticks(list(range(len(ht))), [lbl.replace("FY20", "'").replace(" ", "\n") for lbl in ht.index])
-        ax.set_ylim(0, 100)
-    _mpl_style(ax, "Financial health score (0-100)")
+        hx = list(range(len(ht)))
+        _area_line(ax, hx, ht["overall"].tolist(), violet, "Health score")
+        ax.scatter([hx[-1]], [ht["overall"].iloc[-1]], s=40, color=violet, edgecolor="white", linewidth=1.5, zorder=4)
+        ax.set_xticks(hx, [f"{lbl.split()[1]} '{lbl.split()[0][-2:]}" for lbl in ht.index])
+        ax.set_ylim(0, 105)
+    _mpl_style(ax, "Financial health score", "0-100")
     out.append(_png(fig))
     return out
 
@@ -338,9 +416,15 @@ def build_pdf(a: Analysis) -> bytes:
     pdf.rect(0, 0, pdf.w, 4, style="F")
     pdf.set_fill_color(109, 40, 217)
     pdf.rect(pdf.w * 0.55, 0, pdf.w * 0.45, 4, style="F")
+    logo = logo_png(a.company.ticker)
+    if logo:
+        try:  # top-right, beside the brand line and title, clear of the subtitle
+            pdf.image(io.BytesIO(logo), x=pdf.l_margin + W - 12, y=pdf.get_y() + 1, w=12, h=12, keep_aspect_ratio=True)
+        except Exception:  # an unreadable image should never break the report
+            pass
     pdf.set_font("Helvetica", "B", 9)
     pdf.set_text_color(109, 40, 217)
-    pdf.cell(W, 5, _ascii(f"{APP_NAME.upper()}  |  {TAGLINE}"), new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(W - 16, 5, _ascii(f"{APP_NAME.upper()}  |  {TAGLINE}"), new_x="LMARGIN", new_y="NEXT")
     h1(f"{a.company.name} ({a.company.ticker})")
     para(f"Quarterly results sentiment & health report - latest quarter {a.latest.fq.label} "
          f"(period ended {a.latest.period_end}) - generated {a.generated_at}", 9, (82, 81, 78))

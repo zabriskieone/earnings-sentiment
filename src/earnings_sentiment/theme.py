@@ -152,8 +152,72 @@ div[data-testid="stPlotlyChart"] {{
 .stTabs [data-baseweb="tab"] {{ border-radius: 10px 10px 0 0; padding: 8px 14px; }}
 .stTabs [aria-selected="true"] {{ font-weight: 700; }}
 .ep-verdict {{
-  display:inline-block; padding: 5px 14px; border-radius: 999px; font-weight: 700; color: #fff;
+  display:inline-block; padding: 5px 14px; border-radius: 999px; font-weight: 700; color: #fff; font-size: 13px;
   background: linear-gradient(90deg, {g1}, {g2});
 }}
+
+/* company hero with logo */
+.ep-hero-co {{ display:flex; align-items:center; gap: 20px; }}
+.ep-hero-text {{ position: relative; z-index: 1; }}
+.ep-ticker {{
+  font-size: 14px; font-weight: 700; padding: 3px 10px; border-radius: 8px; vertical-align: middle; margin-left: 6px;
+  background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.25);
+}}
+.ep-chip-strong {{ background: linear-gradient(90deg, #c4b5fd, #f0abfc) !important; color: {g0} !important;
+  font-weight: 700; border: none !important; }}
+
+/* generic card + insight list */
+.ep-card {{
+  background: {v['card']}; border: 1px solid {v['card_border']}; border-radius: 16px; padding: 18px 20px 8px;
+  box-shadow: 0 4px 16px {v['shadow']}; height: 100%;
+}}
+.ep-card-head {{ display:flex; align-items:center; justify-content:space-between; gap: 12px; }}
+.ep-card-head h3 {{ margin: 0; padding: 0; font-size: 18px; }}
+.ep-card .ep-note {{ margin: 2px 0 8px; }}
+.ep-ins-list {{ list-style: none; padding: 0; margin: 0; }}
+.ep-ins {{ display:flex; align-items:flex-start; gap: 10px; padding: 9px 0; border-top: 1px dashed {v['card_border']};
+  font-size: 14px; line-height: 1.45; }}
+.ep-ins-icon {{
+  flex: 0 0 22px; height: 22px; border-radius: 50%; display:grid; place-items:center; font-size: 10px; color: #fff;
+  margin-top: 1px;
+}}
+.ep-ins.positive .ep-ins-icon {{ background: #0d9488; }}
+.ep-ins.negative .ep-ins-icon {{ background: #e11d48; }}
+.ep-ins.neutral .ep-ins-icon {{ background: #8a85a6; }}
+.ep-ins-area {{ flex: 0 0 104px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: {v['muted']}; padding-top: 3px; }}
+
+/* segmented, pill-shaped tabs */
+.stTabs [role="tablist"] {{
+  background: {v['card']}; border: 1px solid {v['card_border']}; border-radius: 999px; padding: 5px; gap: 4px;
+  width: fit-content; max-width: 100%; box-shadow: 0 4px 16px {v['shadow']}; border-bottom: 1px solid {v['card_border']};
+}}
+.stTabs [role="tab"] {{ border-radius: 999px !important; padding: 7px 18px !important; height: auto !important;
+  margin: 0 !important; transition: background .15s ease; }}
+.stTabs [role="tab"]:hover {{ background: {v['shadow']}; }}
+.stTabs [role="tab"][data-selected="true"], .stTabs [role="tab"][aria-selected="true"] {{
+  background: linear-gradient(90deg, {g1}, {g2}) !important; box-shadow: 0 4px 12px rgba(109,40,217,0.35);
+}}
+.stTabs [role="tab"][aria-selected="true"] p, .stTabs [role="tab"][aria-selected="true"] div {{ color: #fff !important; }}
+.stTabs [role="tab"]::after, .stTabs [role="tab"]::before {{ display: none !important; }}
+.stTabs [role="tablist"] > :not([role="tab"]) {{ display: none !important; }}
+.stTabs [role="tabpanel"] {{ padding-top: 18px; }}
+
+/* KPI sparklines in brand violet */
+div[data-testid="stMetric"] .mark-line path {{ stroke: {ACCENT} !important; stroke-width: 2px !important; }}
+div[data-testid="stMetric"] .mark-area path {{ fill: {ACCENT} !important; fill-opacity: 0.16 !important; }}
+div[data-testid="stMetric"] .mark-symbol path {{ fill: {ACCENT} !important; }}
+
+/* soft download buttons */
+.main div[data-testid="stDownloadButton"] button, section.main div[data-testid="stDownloadButton"] button,
+div[data-testid="stMainBlockContainer"] div[data-testid="stDownloadButton"] button {{
+  border-radius: 999px; border: 1px solid {v['card_border']}; background: {v['card']};
+  box-shadow: 0 2px 10px {v['shadow']};
+}}
+div[data-testid="stMainBlockContainer"] div[data-testid="stDownloadButton"] button:hover {{
+  border-color: {ACCENT}; color: {ACCENT};
+}}
+div[data-testid="stExpander"] details {{ border-radius: 14px; border-color: {v['card_border']}; background: {v['card']}; }}
+div[data-testid="stDataFrame"] {{ border-radius: 12px; overflow: hidden; }}
 </style>
 """

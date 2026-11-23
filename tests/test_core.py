@@ -137,3 +137,27 @@ def test_match_press_release_picks_first_202_after_quarter():
     eight_ks = [mk(date(2026, 1, 29), "2.02,9.01"), mk(date(2026, 1, 15), "5.02"), mk(date(2026, 4, 30), "2.02,9.01")]
     assert match_press_release(date(2025, 12, 27), eight_ks).filing_date == date(2026, 1, 29)
     assert match_press_release(date(2025, 6, 28), eight_ks) is None
+
+
+# ------------------------------------------------------------------ logos & chart helpers
+def test_monogram_and_fallback_tile(monkeypatch):
+    from earnings_sentiment import logos
+
+    assert logos.monogram("AAPL") == "AA"
+    assert logos.monogram("BRK-B") == "BR"
+    monkeypatch.setattr(logos, "logo_png", lambda t: None)  # offline / no logo available
+    tile = logos.logo_html("ZZZZ")
+    assert "ZZ" in tile and "<img" not in tile
+
+
+def test_short_quarter_label():
+    from earnings_sentiment.charts import _short
+
+    assert _short("FY2026 Q4") == "Q4 '26"
+    assert _short("odd") == "odd"
+
+
+def test_headings_with_split_words_are_found():
+    body = "x " * 400
+    text = f"ITEM 1A. RI SK FACTORS Our operations face risks. {body} ITEM 2. UNREGISTERED SALES"
+    assert extract_section(text, "10-Q", "risk").startswith("Our operations face risks.")

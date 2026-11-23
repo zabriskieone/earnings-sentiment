@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))  # works withou
 import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
-from earnings_sentiment import charts, config, theme  # noqa: E402
+from earnings_sentiment import charts, config, logos, theme  # noqa: E402
 from earnings_sentiment.analysis import SECTIONS, Analysis, analyze  # noqa: E402
 from earnings_sentiment.edgar import EdgarClient, EdgarError  # noqa: E402
 from earnings_sentiment.health import METRIC_LABELS  # noqa: E402
@@ -55,7 +55,7 @@ def top_bar() -> None:
                  help="Switch to light mode" if dark else "Switch to dark mode", on_click=_toggle_theme,
                  type="tertiary")
 
-SIGNAL_ICON = {"positive": ":green[▲]", "negative": ":red[▼]", "neutral": ":gray[●]"}
+INSIGHT_ICON = {"positive": "▲", "negative": "▼", "neutral": "●"}
 
 
 # ----------------------------------------------------------------------------- cached work
@@ -205,24 +205,30 @@ latest = a.latest
 method = "FinBERT + Loughran-McDonald" if a.used_finbert else "Loughran-McDonald"
 st.markdown(
     f"""
-<div class="ep-hero">
-  <h1>{html.escape(a.company.name)} ({a.company.ticker})</h1>
-  <p>Latest quarter <b>{latest.fq.label}</b>: period ended {latest.period_end}, {latest.filing.form} filed
-  {latest.filing.filing_date}</p>
-  <span class="ep-chip">{len(a.quarters)} quarters</span><span class="ep-chip">Tone: {method}</span>
-  <span class="ep-chip">Overall: {verdict_label}</span><span class="ep-chip">Generated {a.generated_at}</span>
+<div class="ep-hero ep-hero-co">
+  {logos.logo_html(a.company.ticker, size=64, radius=18)}
+  <div class="ep-hero-text">
+    <h1>{html.escape(a.company.name)} <span class="ep-ticker">{a.company.ticker}</span></h1>
+    <p>Latest quarter <b>{latest.fq.label}</b> · period ended {latest.period_end} · {latest.filing.form} filed
+    {latest.filing.filing_date}</p>
+    <span class="ep-chip">{len(a.quarters)} quarters</span><span class="ep-chip">Tone: {method}</span>
+    <span class="ep-chip ep-chip-strong">Overall: {verdict_label}</span>
+  </div>
 </div>
 """,
     unsafe_allow_html=True,
 )
 
 k_list = kpis(a)
+sparks = charts.sparkline_series(a)
 cols = st.columns(3) + st.columns(3)
 for col, k in zip(cols, k_list):
     delta = k["delta"] or None
     numeric_delta = delta and delta[0] in "+-"
+    data = sparks.get(k["name"]) or None
     col.metric(k["name"], k["value"], delta if numeric_delta else None,
-               help=None if numeric_delta else (delta or None), border=True)
+               help=k.get("note") or (None if numeric_delta else (delta or None)), border=True,
+               chart_data=data if data and len(data) > 1 else None, chart_type="area")
 
 key = f"{a.company.ticker}-{latest.fq.slug}-{n_q}-{fb}-{a.generated_at}"
 d1, d2, d3, d4 = st.columns(4)
@@ -243,7 +249,9 @@ for w in a.warnings:
 
 
 def show(fig, key: str):
-    st.plotly_chart(fig, width="stretch", config={"displaylogo": False}, key=key)
+    # theme=None: the figures carry their own light/dark styling
+    st.plotly_chart(fig, width="stretch", theme=None, key=key,
+                    config={"displaylogo": False, "displayModeBar": False})
 
 
 tab_over, tab_fin, tab_sent, tab_health, tab_src = st.tabs(
@@ -252,26 +260,38 @@ tab_over, tab_fin, tab_sent, tab_health, tab_src = st.tabs(
 
 # ----------------------------------------------------------------------------- overview
 with tab_over:
-    st.subheader(f"What changed in {latest.fq.label}")
-    st.markdown(f'<span class="ep-verdict">Overall direction: {verdict_label}</span> '
-                f'<span class="ep-note">&nbsp;{verdict_detail}</span>', unsafe_allow_html=True)
-    st.markdown("  \n".join(f"{SIGNAL_ICON[i.signal]} **{i.area}:** {i.text}" for i in insights))
+    left, right = st.columns([1.75, 1], gap="medium")
+    with left:
+        items = "".join(
+            f'<li class="ep-ins {i.signal}"><span class="ep-ins-icon">{INSIGHT_ICON[i.signal]}</span>'
+            f'<span class="ep-ins-area">{html.escape(i.area)}</span><span>{html.escape(i.text)}</span></li>'
+            for i in insights
+        )
+        st.markdown(
+            f'<div class="ep-card"><div class="ep-card-head"><h3>What changed in {latest.fq.label}</h3>'
+            f'<span class="ep-verdict">{verdict_label}</span></div>'
+            f'<p class="ep-note">{verdict_detail}</p><ul class="ep-ins-list">{items}</ul></div>',
+            unsafe_allow_html=True,
+        )
+    with right:
+        show(charts.health_gauge(a, MODE, height=330), "gauge_over")
+        show(charts.pillars_chart(a, MODE), "pillars_over")
     c1, c2 = st.columns(2)
     with c1:
-        show(charts.revenue_income_chart(a), "revenue_income_chart_1")
+        show(charts.revenue_income_chart(a, MODE), "revenue_over")
     with c2:
-        show(charts.tone_index_chart(a), "tone_index_chart_1")
+        show(charts.tone_index_chart(a, MODE), "tone_over")
 
 # ----------------------------------------------------------------------------- financials
 with tab_fin:
     c1, c2 = st.columns(2)
     with c1:
-        show(charts.revenue_income_chart(a), "revenue_income_chart_2")
-        show(charts.margins_chart(a), "margins_chart_1")
-        show(charts.balance_chart(a), "balance_chart_1")
+        show(charts.revenue_income_chart(a, MODE), "revenue_income_chart_2")
+        show(charts.margins_chart(a, MODE), "margins_chart_1")
+        show(charts.balance_chart(a, MODE), "balance_chart_1")
     with c2:
-        show(charts.growth_chart(a), "growth_chart_1")
-        show(charts.cash_chart(a), "cash_chart_1")
+        show(charts.growth_chart(a, MODE), "growth_chart_1")
+        show(charts.cash_chart(a, MODE), "cash_chart_1")
     st.subheader("Quarter-by-quarter")
     st.dataframe(pd.DataFrame(data_table(a)).set_index("Quarter"), width="stretch")
     st.caption("Fourth-quarter flows are derived as full-year minus nine months, as 10-K filings report annual totals.")
@@ -280,11 +300,11 @@ with tab_fin:
 with tab_sent:
     c1, c2 = st.columns(2)
     with c1:
-        show(charts.tone_index_chart(a), "tone_index_chart_2")
-        show(charts.lm_categories_chart(a, "mdna"), "lm_categories_chart_mdna_1")
+        show(charts.tone_index_chart(a, MODE), "tone_index_chart_2")
+        show(charts.lm_categories_chart(a, "mdna", MODE), "lm_categories_chart_mdna_1")
     with c2:
-        show(charts.tone_sources_chart(a), "tone_sources_chart_1")
-        show(charts.risk_length_chart(a), "risk_length_chart_1")
+        show(charts.tone_sources_chart(a, MODE), "tone_sources_chart_1")
+        show(charts.risk_length_chart(a, MODE), "risk_length_chart_1")
     st.subheader("Evidence: the sentences driving the scores")
     labels = [q.fq.label for q in a.quarters]
     pick = st.selectbox("Quarter", list(reversed(labels)), key="evidence_q")
@@ -310,12 +330,14 @@ with tab_sent:
 
 # ----------------------------------------------------------------------------- health
 with tab_health:
-    c1, c2 = st.columns(2)
+    c1, c2, c3 = st.columns([1, 1.15, 1.45])
     with c1:
-        show(charts.pillars_chart(a), "pillars_chart_1")
-        show(charts.fscore_chart(a), "fscore_chart_1")
+        show(charts.health_gauge(a, MODE, height=320), "gauge_health")
     with c2:
-        show(charts.health_trend_chart(a), "health_trend_chart_1")
+        show(charts.pillars_chart(a, MODE, height=320), "pillars_chart_1")
+    with c3:
+        show(charts.fscore_chart(a, MODE, height=320), "fscore_chart_1")
+    show(charts.health_trend_chart(a, MODE), "health_trend_chart_1")
     h = latest.health or {"metrics": {}, "metric_scores": {}}
     c1, c2 = st.columns(2)
     with c1:
