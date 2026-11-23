@@ -1,9 +1,11 @@
-# Earnings Sentiment
+# 📈 EarningsPulse
+
+**Sentiment & health from every quarterly result.**
 
 [![tests](https://github.com/zabriskieone/earnings-sentiment/actions/workflows/tests.yml/badge.svg)](https://github.com/zabriskieone/earnings-sentiment/actions/workflows/tests.yml)
 
-An interactive dashboard that reads every quarterly result a company files with
-the US SEC and shows:
+EarningsPulse is an interactive dashboard that reads every quarterly result a company
+files with the US SEC and shows:
 
 * **Management tone**: is the language in the MD&A and the earnings press release
   getting more positive or more cautious? Scored with the Loughran-McDonald finance
@@ -126,7 +128,9 @@ was read when it came out.
 
 ## What's inside
 
-![Sentiment tab](docs/images/dashboard-sentiment.png)
+![Landing page](docs/images/dashboard-landing.png)
+
+Use the ☀️/🌙 icon at the top right to switch between light and dark mode.
 
 | Tab | Shows |
 |---|---|

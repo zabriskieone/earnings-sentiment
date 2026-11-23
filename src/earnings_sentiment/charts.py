@@ -28,7 +28,7 @@ def _layout(fig: go.Figure, title: str, y_title: str = "", y_format: str | None 
         title=dict(text=title, x=0, xanchor="left", y=0.98, yanchor="top", yref="container", font=dict(size=15)),
         height=height,
         autosize=True,
-        margin=dict(l=10, r=10, t=78, b=10),
+        margin=dict(l=10, r=28, t=78, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
@@ -37,7 +37,7 @@ def _layout(fig: go.Figure, title: str, y_title: str = "", y_format: str | None 
         bargap=0.25,
         bargroupgap=0.08,
     )
-    fig.update_xaxes(showgrid=False, linecolor=GRID, type="category")
+    fig.update_xaxes(showgrid=False, linecolor=GRID, type="category", tickangle=-35, automargin=True)
     fig.update_yaxes(gridcolor=GRID, zerolinecolor="rgba(137,135,129,0.6)", title_text=y_title,
                      tickformat=y_format)
     return fig

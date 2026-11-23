@@ -21,6 +21,7 @@ from .analysis import SECTIONS, Analysis  # noqa: E402
 from .charts import NEGATIVE, POSITIVE, SERIES, all_charts  # noqa: E402
 from .health import METRIC_LABELS, PERCENT_METRICS  # noqa: E402
 from .narrative import build_insights, money, pct, verdict  # noqa: E402
+from .theme import APP_NAME, GRADIENT, TAGLINE  # noqa: E402
 
 DISCLAIMER = (
     "Hobby research tool. Automated text and ratio analysis of public SEC filings; "
@@ -73,7 +74,7 @@ def metric_value(key: str, v) -> str:
 HTML_TEMPLATE = Template("""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ a.company.ticker }} earnings sentiment - {{ a.latest.fq.label }}</title>
+<title>{{ app_name }} · {{ a.company.ticker }} {{ a.latest.fq.label }}</title>
 <style>
 :root { --bg:#f9f9f7; --card:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --line:#e1e0d9;
         --good:#006300; --bad:#d03b3b; }
@@ -82,6 +83,10 @@ HTML_TEMPLATE = Template("""<!doctype html>
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
 main { max-width:1100px; margin:0 auto; padding:24px 16px 48px; }
+.hero { border-radius:16px; padding:22px 24px; margin:0 0 18px; color:#fff;
+        background:linear-gradient(120deg, {{ g[0] }} 0%, {{ g[1] }} 55%, {{ g[2] }} 100%); }
+.hero .brand { font-size:12px; letter-spacing:.08em; text-transform:uppercase; opacity:.8; margin-bottom:6px; }
+.hero h1 { color:#fff; } .hero .sub { color:rgba(255,255,255,.85); margin:0; }
 h1 { font-size:26px; margin:0 0 4px; } h2 { font-size:19px; margin:32px 0 12px; border-bottom:1px solid var(--line); padding-bottom:6px; }
 .sub { color:var(--ink2); margin:0 0 16px; }
 .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
@@ -107,9 +112,10 @@ a { color:#2a78d6; word-break:break-all; }
 .js-plotly-plot .plotly .main-svg text { fill: var(--ink2) !important; }
 .js-plotly-plot .plotly .main-svg .gtitle { fill: var(--ink) !important; }
 </style></head><body><main>
+<div class="hero"><div class="brand">{{ app_name }} · {{ tagline }}</div>
 <h1>{{ a.company.name }} ({{ a.company.ticker }})</h1>
 <p class="sub">Quarterly results sentiment &amp; health report - latest quarter <b>{{ a.latest.fq.label }}</b>
-(period ended {{ a.latest.period_end }}) - generated {{ a.generated_at }}</p>
+(period ended {{ a.latest.period_end }}) - generated {{ a.generated_at }}</p></div>
 <div class="kpis">{% for k in kpis %}<div class="kpi"><div class="n">{{ k.name }}</div><div class="v">{{ k.value }}</div><div class="d">{{ k.delta }}</div></div>{% endfor %}</div>
 
 <h2>What changed</h2>
@@ -206,6 +212,7 @@ def build_html(a: Analysis, offline: bool = True) -> str:
         sections=SECTIONS, health=a.latest.health or {"metrics": {}, "metric_scores": {}},
         fscore=a.latest.fscore, metric_labels=METRIC_LABELS, metric_value=metric_value,
         table_html=f"<table><tr>{head}</tr>{body}</table>", sources=a.sources(), disclaimer=DISCLAIMER,
+        app_name=APP_NAME, tagline=TAGLINE, g=GRADIENT,
     )
 
 
@@ -297,7 +304,7 @@ class _PDF(FPDF):
         self.set_y(-12)
         self.set_font("Helvetica", size=7)
         self.set_text_color(137, 135, 129)
-        self.cell(0, 5, _ascii(f"{self.title_text} - page {self.page_no()} - {DISCLAIMER[:90]}..."), align="C")
+        self.cell(0, 5, _ascii(f"{APP_NAME} - {self.title_text} - page {self.page_no()} - {DISCLAIMER[:80]}..."), align="C")
 
 
 def build_pdf(a: Analysis) -> bytes:
@@ -326,6 +333,14 @@ def build_pdf(a: Analysis) -> bytes:
         pdf.set_text_color(*color)
         pdf.multi_cell(W, 5, _ascii(t), new_x="LMARGIN", new_y="NEXT")
 
+    # brand band
+    pdf.set_fill_color(76, 29, 149)
+    pdf.rect(0, 0, pdf.w, 4, style="F")
+    pdf.set_fill_color(109, 40, 217)
+    pdf.rect(pdf.w * 0.55, 0, pdf.w * 0.45, 4, style="F")
+    pdf.set_font("Helvetica", "B", 9)
+    pdf.set_text_color(109, 40, 217)
+    pdf.cell(W, 5, _ascii(f"{APP_NAME.upper()}  |  {TAGLINE}"), new_x="LMARGIN", new_y="NEXT")
     h1(f"{a.company.name} ({a.company.ticker})")
     para(f"Quarterly results sentiment & health report - latest quarter {a.latest.fq.label} "
          f"(period ended {a.latest.period_end}) - generated {a.generated_at}", 9, (82, 81, 78))

@@ -6,6 +6,7 @@ Run in Docker: docker compose up      (then open http://localhost:8501)
 
 from __future__ import annotations
 
+import html
 import io
 import json
 import sys
@@ -17,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))  # works withou
 import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
-from earnings_sentiment import charts, config  # noqa: E402
+from earnings_sentiment import charts, config, theme  # noqa: E402
 from earnings_sentiment.analysis import SECTIONS, Analysis, analyze  # noqa: E402
 from earnings_sentiment.edgar import EdgarClient, EdgarError  # noqa: E402
 from earnings_sentiment.health import METRIC_LABELS  # noqa: E402
@@ -25,7 +26,34 @@ from earnings_sentiment.narrative import build_insights, verdict  # noqa: E402
 from earnings_sentiment.report import DISCLAIMER, build_html, build_pdf, data_table, kpis, metric_value  # noqa: E402
 from earnings_sentiment.sentiment import finbert_available  # noqa: E402
 
-st.set_page_config(page_title="Earnings Sentiment", page_icon="📈", layout="wide")
+st.set_page_config(page_title=f"{theme.APP_NAME} · {theme.TAGLINE}", page_icon=theme.APP_ICON, layout="wide")
+
+# ----------------------------------------------------------------------------- light / dark mode
+if "theme_mode" not in st.session_state:
+    # start in whatever the browser/OS is using; the toggle takes over from there
+    browser_mode = getattr(getattr(st.context, "theme", None), "type", None)
+    st.session_state["theme_mode"] = browser_mode if browser_mode in ("light", "dark") else "light"
+MODE = st.session_state["theme_mode"]
+if theme.current_mode() != MODE or not st.session_state.get("_palette_applied"):
+    theme.apply_palette(MODE)
+    st.session_state["_palette_applied"] = True
+    st.rerun()
+st.markdown(theme.css(MODE), unsafe_allow_html=True)
+
+
+def _toggle_theme() -> None:
+    # Only record the choice here: Streamlit sends the theme at the start of a run, so the
+    # check at the top of the script applies the palette and triggers one more run.
+    st.session_state["theme_mode"] = "light" if st.session_state["theme_mode"] == "dark" else "dark"
+
+
+def top_bar() -> None:
+    """Right-aligned light/dark switch shown above every page."""
+    _, right = st.columns([20, 1])
+    dark = st.session_state["theme_mode"] == "dark"
+    right.button("", icon=":material/light_mode:" if dark else ":material/dark_mode:", key="theme_toggle",
+                 help="Switch to light mode" if dark else "Switch to dark mode", on_click=_toggle_theme,
+                 type="tertiary")
 
 SIGNAL_ICON = {"positive": ":green[▲]", "negative": ":red[▼]", "neutral": ":gray[●]"}
 
@@ -80,8 +108,11 @@ def pdf_report(_a: Analysis, key: str) -> bytes:
 
 # ----------------------------------------------------------------------------- sidebar
 with st.sidebar:
-    st.header("Earnings sentiment")
-    st.caption("Sentiment and financial health from each quarterly result, using official SEC filings.")
+    st.markdown(
+        f'<div class="ep-brand"><div class="ep-logo">{theme.APP_ICON}</div>'
+        f'<div class="ep-name">{theme.APP_NAME}</div></div><div class="ep-tag">{theme.TAGLINE}</div>',
+        unsafe_allow_html=True,
+    )
 
     ua = st.text_input(
         "Your name and e-mail (sent to SEC)",
@@ -126,21 +157,30 @@ if go and choice:
     st.session_state["request"] = (choice.split(" — ")[0], quarters, use_fb)
 
 req = st.session_state.get("request")
+top_bar()
 if not req:
-    st.title("📈 Quarterly earnings sentiment & health")
     st.markdown(
-        """
-Pick a company in the sidebar and press **Analyse**. For each recent quarter the app:
-
-1. downloads the **10-Q / 10-K** and the **earnings press release** (8-K, Exhibit 99.1) from SEC EDGAR;
-2. scores management's tone with the **Loughran-McDonald** finance dictionary and, optionally, **FinBERT**;
-3. pulls the reported numbers from SEC's **XBRL** data and compares each quarter with the previous one and with the same quarter a year earlier;
-4. rates **financial health** with a transparent five-pillar scorecard and the **Piotroski F-Score**.
-
-Every figure links back to the filing it came from. Download a full HTML or PDF report from the results page.
-
-*Covers companies that file 10-Q/10-K reports with the US SEC.*
-"""
+        f"""
+<div class="ep-hero">
+  <h1>{theme.APP_ICON} {theme.APP_NAME}</h1>
+  <p>{theme.TAGLINE}: management's tone, the numbers behind it, and the company's financial health.</p>
+  <span class="ep-chip">Official SEC filings</span><span class="ep-chip">Loughran-McDonald + FinBERT</span>
+  <span class="ep-chip">Every figure traceable</span>
+</div>
+<div class="ep-steps">
+  <div class="ep-step"><div class="n">1</div><b>Read the filings</b>
+    <span>Downloads each 10-Q / 10-K and the earnings press release (8-K, Exhibit 99.1) from SEC EDGAR.</span></div>
+  <div class="ep-step"><div class="n">2</div><b>Score the tone</b>
+    <span>Rates management's language with the Loughran-McDonald finance dictionary and, optionally, FinBERT.</span></div>
+  <div class="ep-step"><div class="n">3</div><b>Compare the numbers</b>
+    <span>Pulls reported figures from SEC's XBRL data and compares each quarter with last quarter and last year.</span></div>
+  <div class="ep-step"><div class="n">4</div><b>Rate the health</b>
+    <span>A transparent five-pillar scorecard plus the Piotroski F-Score, with every signal shown.</span></div>
+</div>
+<p class="ep-note">Pick a company in the sidebar and press <b>Analyse</b>. Covers companies that file 10-Q/10-K
+reports with the US SEC. Download a full HTML or PDF report from the results page.</p>
+""",
+        unsafe_allow_html=True,
     )
     st.stop()
 
@@ -162,11 +202,18 @@ progress_bar.empty()
 insights = build_insights(a)
 verdict_label, verdict_detail = verdict(insights)
 latest = a.latest
-st.title(f"{a.company.name} ({a.company.ticker})")
-st.caption(
-    f"Latest quarter **{latest.fq.label}** (period ended {latest.period_end}, {latest.filing.form} filed "
-    f"{latest.filing.filing_date}) · {len(a.quarters)} quarters · tone method: "
-    f"{'FinBERT + Loughran-McDonald' if a.used_finbert else 'Loughran-McDonald'} · generated {a.generated_at}"
+method = "FinBERT + Loughran-McDonald" if a.used_finbert else "Loughran-McDonald"
+st.markdown(
+    f"""
+<div class="ep-hero">
+  <h1>{html.escape(a.company.name)} ({a.company.ticker})</h1>
+  <p>Latest quarter <b>{latest.fq.label}</b>: period ended {latest.period_end}, {latest.filing.form} filed
+  {latest.filing.filing_date}</p>
+  <span class="ep-chip">{len(a.quarters)} quarters</span><span class="ep-chip">Tone: {method}</span>
+  <span class="ep-chip">Overall: {verdict_label}</span><span class="ep-chip">Generated {a.generated_at}</span>
+</div>
+""",
+    unsafe_allow_html=True,
 )
 
 k_list = kpis(a)
@@ -206,7 +253,8 @@ tab_over, tab_fin, tab_sent, tab_health, tab_src = st.tabs(
 # ----------------------------------------------------------------------------- overview
 with tab_over:
     st.subheader(f"What changed in {latest.fq.label}")
-    st.markdown(f"**Overall direction: {verdict_label}** · {verdict_detail}")
+    st.markdown(f'<span class="ep-verdict">Overall direction: {verdict_label}</span> '
+                f'<span class="ep-note">&nbsp;{verdict_detail}</span>', unsafe_allow_html=True)
     st.markdown("  \n".join(f"{SIGNAL_ICON[i.signal]} **{i.area}:** {i.text}" for i in insights))
     c1, c2 = st.columns(2)
     with c1:
