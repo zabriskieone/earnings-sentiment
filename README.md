@@ -31,58 +31,70 @@ Search **any company that files 10-Q/10-K reports with the SEC**, then press
 
 ## Quick start
 
-You need a name and e-mail to identify yourself to SEC (their
-[fair-access policy](https://www.sec.gov/os/accessing-edgar-data) requires it).
-You can type it in the sidebar or put it in a `.env` file:
+### Mac or Linux: one command
+
+Open **Terminal** and paste:
 
 ```bash
-cp .env.example .env    # then edit SEC_USER_AGENT="Your Name you@example.com"
+curl -fsSL https://raw.githubusercontent.com/zabriskieone/earnings-sentiment/main/install.sh | bash
 ```
 
-### Option A: Docker (no Python setup)
+That's it. It downloads EarningsPulse to `~/EarningsPulse`, sets everything up, asks two quick questions
+(include the FinBERT AI model? your name and e-mail for the SEC) and opens the dashboard at
+<http://localhost:8501>. The first run takes a few minutes; after that it starts in seconds.
+
+**Next time:** double-click **`Start EarningsPulse.command`** in the `EarningsPulse` folder (first time:
+right-click it, choose *Open*, then *Open* again so macOS allows it), or run `~/EarningsPulse/start.sh`.
+Running the one-liner again also updates the app to the latest version.
+
+### Windows: one command
+
+Open **PowerShell** and paste:
+
+```powershell
+irm https://raw.githubusercontent.com/zabriskieone/earnings-sentiment/main/install.ps1 | iex
+```
+
+Needs Python 3.10+ from [python.org](https://www.python.org/downloads/windows/) (tick *Add python.exe to PATH*).
+Next time, double-click **`start.bat`** in `%USERPROFILE%\EarningsPulse`.
+
+> Prefer to look before you run? Both installers are short and readable:
+> [`install.sh`](install.sh), [`install.ps1`](install.ps1), [`start.sh`](start.sh), [`start.bat`](start.bat).
+> Or download the repo (green **Code → Download ZIP**) and double-click the start file yourself.
+
+**What the installer does**
+- uses your Python 3.10+, or offers to install one automatically with [uv](https://docs.astral.sh/uv/) if you have none (Mac/Linux);
+- keeps everything inside the app folder (`.venv`), so nothing else on your computer changes;
+- saves your SEC name and e-mail in `.env` on your computer only (never uploaded);
+- only reinstalls packages when an update changes them.
+
+To remove EarningsPulse, delete the `EarningsPulse` folder.
+
+### Docker (alternative)
 
 ```bash
-git clone https://github.com/zabriskieone/earnings-sentiment.git
-```
-```bash
-cd earnings-sentiment
-```
-```bash
-docker compose up --build
+git clone https://github.com/zabriskieone/earnings-sentiment.git && cd earnings-sentiment && docker compose up --build
 ```
 
-Open <http://localhost:8501>. The first build installs CPU-only PyTorch (a few
-minutes). For a much smaller image without FinBERT:
+Then open <http://localhost:8501>. For a smaller image without FinBERT:
 `docker compose build --build-arg WITH_FINBERT=false`.
 
-### Option B: Python 3.10+
+### Manual setup (developers)
 
 ```bash
-git clone https://github.com/zabriskieone/earnings-sentiment.git
+python -m venv .venv && source .venv/bin/activate
 ```
 ```bash
-cd earnings-sentiment
-```
-```bash
-python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
-```
-```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-finbert.txt
 ```
 ```bash
 streamlit run app.py
 ```
 
-**Optional: FinBERT** (context-aware sentiment model, about 2 GB of packages plus
-a 440 MB model downloaded on first use):
+### New to earnings reports?
 
-```bash
-pip install -r requirements-finbert.txt
-```
-
-On Linux, install the smaller CPU-only PyTorch first:
-`pip install torch --index-url https://download.pytorch.org/whl/cpu`.
-Without FinBERT the app still works, using dictionary scores only.
+Open the **Guide** tab in the app for a plain-English primer and glossary, or click **How to read this chart**
+under any chart.
 
 ---
 
@@ -100,10 +112,11 @@ filings are fetched after each results day.
 
 ## Tracking your portfolio over time (git workflow)
 
-After a company reports, save a dated snapshot and commit it:
+After a company reports, save a dated snapshot and commit it (run these from the app folder; `.venv/bin/python`
+is the environment the installer created, or use `python` if you set things up manually):
 
 ```bash
-python -m earnings_sentiment snapshot AAPL
+.venv/bin/python -m earnings_sentiment snapshot AAPL
 ```
 ```bash
 git add snapshots && git commit -m "AAPL FY2026 Q4 results snapshot"
@@ -120,7 +133,7 @@ snapshots/AAPL/
     └── report.pdf
 ```
 
-Several tickers at once: `python -m earnings_sentiment snapshot AAPL MSFT NVDA`.
+Several tickers at once: `.venv/bin/python -m earnings_sentiment snapshot AAPL MSFT NVDA`.
 Over time, `git log -p snapshots/AAPL/history.csv` shows exactly how each quarter
 was read when it came out.
 
@@ -140,6 +153,7 @@ Use the ☀️/🌙 icon at the top right to switch between light and dark mode.
 | **Financials** | Revenue/net income, YoY growth, margins, cash flow and buybacks, net cash vs debt, quarterly table |
 | **Sentiment** | Tone index, tone by document and method, LM word categories, risk-factor length, and the **evidence sentences** behind each score |
 | **Health** | Pillar scores, health trend, Piotroski F-Score with every signal |
+| **Guide** | A primer for beginners, every chart explained, and a searchable glossary |
 | **Sources & method** | Links to every filing used and a method summary |
 
 **Data sources (all free and official)**
@@ -161,6 +175,8 @@ Use the ☀️/🌙 icon at the top right to switch between light and dark mode.
 ## Project layout
 
 ```
+install.sh / install.ps1       one-line installers (Mac/Linux, Windows)
+start.sh / start.bat           launchers (also "Start EarningsPulse.command" for macOS Finder)
 app.py                         Streamlit dashboard
 src/earnings_sentiment/
   edgar.py                     SEC client (rate-limited, disk-cached)
@@ -172,6 +188,9 @@ src/earnings_sentiment/
   analysis.py                  orchestration
   narrative.py                 "what changed" rules
   charts.py                    Plotly charts
+  explain.py                   "how to read" guides and glossary
+  logos.py                     company logos with monogram fallback
+  theme.py                     EarningsPulse look, light/dark palettes
   report.py                    HTML + PDF reports
   cli.py                       `snapshot` command
 tests/                         offline unit tests (pytest)

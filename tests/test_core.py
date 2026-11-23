@@ -161,3 +161,16 @@ def test_headings_with_split_words_are_found():
     body = "x " * 400
     text = f"ITEM 1A. RI SK FACTORS Our operations face risks. {body} ITEM 2. UNREGISTERED SALES"
     assert extract_section(text, "10-Q", "risk").startswith("Our operations face risks.")
+
+
+def test_every_chart_has_a_guide_and_terms_are_defined():
+    from earnings_sentiment.explain import CHART_GUIDES, GLOSSARY, guide_markdown
+
+    expected = {"revenue", "growth", "margins", "cash", "balance", "tone", "tone_sources", "lm_mdna",
+                "risk_length", "gauge", "pillars", "fscore", "health"}
+    assert expected <= set(CHART_GUIDES)
+    for key, g in CHART_GUIDES.items():
+        assert {"title", "what", "read", "good"} <= set(g), key
+        for term in g.get("terms", []):
+            assert term in GLOSSARY, f"{key}: '{term}' missing from glossary"
+        assert "How to read it" in guide_markdown(key)

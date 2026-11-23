@@ -23,6 +23,7 @@ from .health import METRIC_LABELS, PERCENT_METRICS  # noqa: E402
 from .narrative import build_insights, money, pct, verdict  # noqa: E402
 from .theme import APP_NAME, GRADIENT, TAGLINE  # noqa: E402
 from .logos import logo_html, logo_png  # noqa: E402
+from .explain import CHART_GUIDES, GLOSSARY, guide_html  # noqa: E402
 
 DISCLAIMER = (
     "Hobby research tool. Automated text and ratio analysis of public SEC filings; "
@@ -115,6 +116,13 @@ th { color:var(--ink2); font-weight:600; }
 .quote { color:var(--ink2); font-style:italic; }
 a { color:#2a78d6; word-break:break-all; }
 .note { color:var(--muted); font-size:13px; }
+details.howto { margin: 2px 8px 8px; font-size: 13px; color: var(--ink2); }
+details.howto summary { cursor: pointer; color: #6d28d9; font-weight: 600; list-style: none; }
+details.howto summary::before { content: "\24D8  "; }
+details.howto p { margin: 6px 0; line-height: 1.5; }
+.gloss { display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; }
+.gloss div { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.gloss b { display:block; color:#6d28d9; margin-bottom: 2px; }
 @media (max-width:520px) { .grid2 { grid-template-columns:1fr; } }
 </style></head><body><main>
 <div class="hero" style="display:flex;gap:18px;align-items:center;">{{ logo }}<div>
@@ -129,10 +137,10 @@ a { color:#2a78d6; word-break:break-all; }
 <ul class="ins">{% for i in insights %}<li class="{{ i.signal }}"><span class="area">{{ i.area }}</span>{{ i.text }}</li>{% endfor %}</ul>
 
 <h2>Financial trends</h2>
-<div class="grid2">{% for k in ["revenue","growth","margins","cash","balance"] %}<div class="card">{{ charts[k] }}</div>{% endfor %}</div>
+<div class="grid2">{% for k in ["revenue","growth","margins","cash","balance"] %}<div class="card">{{ charts[k] }}{{ guides[k] }}</div>{% endfor %}</div>
 
 <h2>Management sentiment</h2>
-<div class="grid2">{% for k in ["tone","tone_sources","lm_mdna","risk_length"] %}<div class="card">{{ charts[k] }}</div>{% endfor %}</div>
+<div class="grid2">{% for k in ["tone","tone_sources","lm_mdna","risk_length"] %}<div class="card">{{ charts[k] }}{{ guides[k] }}</div>{% endfor %}</div>
 <h3>Evidence from {{ a.latest.fq.label }} (most positive / most negative sentences)</h3>
 <table><tr><th>Document</th><th>Most positive</th><th>Most negative</th></tr>
 {% for sec, d in a.latest.docs.items() if sec != "risk" %}<tr><td>{{ sections[sec] }}</td>
@@ -140,7 +148,7 @@ a { color:#2a78d6; word-break:break-all; }
 <td class="quote">{% for s in d.top_negative[:2] %}"{{ s.text }}"<br>{% endfor %}</td></tr>{% endfor %}</table>
 
 <h2>Financial health</h2>
-<div class="grid2">{% for k in ["health","pillars","fscore"] %}<div class="card">{{ charts[k] }}</div>{% endfor %}</div>
+<div class="grid2">{% for k in ["gauge","pillars","fscore","health"] %}<div class="card">{{ charts[k] }}{{ guides[k] }}</div>{% endfor %}</div>
 <h3>Scorecard metrics - {{ a.latest.fq.label }}</h3>
 <table><tr><th>Metric</th><th>Value</th><th>Score (0-100)</th></tr>
 {% for key, label in metric_labels.items() %}<tr><td>{{ label }}</td><td>{{ metric_value(key, health.metrics.get(key)) }}</td>
@@ -151,6 +159,9 @@ a { color:#2a78d6; word-break:break-all; }
 
 <h2>Quarter-by-quarter data</h2>
 {{ table_html }}
+
+<h2>Glossary</h2>
+<div class="gloss">{% for t, d in glossary.items() %}<div><b>{{ t }}</b>{{ d }}</div>{% endfor %}</div>
 
 <h2>Sources (every figure is traceable)</h2>
 <table><tr><th>Document</th><th>Link</th></tr>{% for s in sources %}<tr><td>{{ s.what }}</td><td><a href="{{ s.url }}">{{ s.url }}</a></td></tr>{% endfor %}</table>
@@ -219,6 +230,7 @@ def build_html(a: Analysis, offline: bool = True) -> str:
         fscore=a.latest.fscore, metric_labels=METRIC_LABELS, metric_value=metric_value,
         table_html=f"<table><tr>{head}</tr>{body}</table>", sources=a.sources(), disclaimer=DISCLAIMER,
         app_name=APP_NAME, tagline=TAGLINE, g=GRADIENT, logo=logo_html(a.company.ticker, 60, 16),
+        guides={k: guide_html(k) for k in figs}, glossary=GLOSSARY,
     )
 
 
@@ -513,6 +525,20 @@ def build_pdf(a: Analysis) -> bytes:
             for c, wd in zip(cols, widths):
                 pdf.cell(wd, 5.5, _ascii(str(r[c])))
             pdf.ln()
+
+    h2("How to read the charts")
+    for gkey in ("revenue", "margins", "tone", "health"):
+        g = CHART_GUIDES[gkey]
+        para(g["title"], 9, style="B")
+        para(f"{g['read']} {g['good']}", 8, (82, 81, 78))
+        pdf.ln(1)
+
+    h2("Glossary")
+    for term, definition in GLOSSARY.items():
+        pdf.set_font("Helvetica", "B", 8)
+        pdf.set_text_color(109, 40, 217)
+        pdf.multi_cell(W, 4, _ascii(term), new_x="LMARGIN", new_y="NEXT")
+        para(definition, 8, (82, 81, 78))
 
     h2("Sources")
     for s in a.sources():

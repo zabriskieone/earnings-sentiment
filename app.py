@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))  # works withou
 import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
-from earnings_sentiment import charts, config, logos, theme  # noqa: E402
+from earnings_sentiment import charts, config, explain, logos, theme  # noqa: E402
 from earnings_sentiment.analysis import SECTIONS, Analysis, analyze  # noqa: E402
 from earnings_sentiment.edgar import EdgarClient, EdgarError  # noqa: E402
 from earnings_sentiment.health import METRIC_LABELS  # noqa: E402
@@ -227,7 +227,8 @@ for col, k in zip(cols, k_list):
     numeric_delta = delta and delta[0] in "+-"
     data = sparks.get(k["name"]) or None
     col.metric(k["name"], k["value"], delta if numeric_delta else None,
-               help=k.get("note") or (None if numeric_delta else (delta or None)), border=True,
+               help=explain.KPI_HELP.get(k["name"], "") + (f" Band: {k['note']}." if k.get("note") else ""),
+               border=True,
                chart_data=data if data and len(data) > 1 else None, chart_type="area")
 
 key = f"{a.company.ticker}-{latest.fq.slug}-{n_q}-{fb}-{a.generated_at}"
@@ -248,14 +249,26 @@ for w in a.warnings:
     st.caption(f"ℹ️ {w}")
 
 
-def show(fig, key: str):
+GUIDE_FOR = {
+    "revenue_income_chart": "revenue", "growth_chart": "growth", "margins_chart": "margins", "cash_chart": "cash",
+    "balance_chart": "balance", "tone_index_chart": "tone", "tone_sources_chart": "tone_sources",
+    "lm_categories_chart": "lm_mdna", "risk_length_chart": "risk_length", "health_gauge": "gauge",
+    "pillars_chart": "pillars", "fscore_chart": "fscore", "health_trend_chart": "health",
+}
+
+
+def show(fig, key: str, guide: str | None = None):
     # theme=None: the figures carry their own light/dark styling
     st.plotly_chart(fig, width="stretch", theme=None, key=key,
                     config={"displaylogo": False, "displayModeBar": False})
+    if guide:
+        with st.popover("How to read this chart", icon=":material/help:", type="tertiary", key=f"help_{key}"):
+            st.markdown(f"#### {explain.CHART_GUIDES[guide]['title']}")
+            st.markdown(explain.guide_markdown(guide))
 
 
-tab_over, tab_fin, tab_sent, tab_health, tab_src = st.tabs(
-    ["Overview", "Financials", "Sentiment", "Health", "Sources & method"]
+tab_over, tab_fin, tab_sent, tab_health, tab_guide, tab_src = st.tabs(
+    ["Overview", "Financials", "Sentiment", "Health", "Guide", "Sources & method"]
 )
 
 # ----------------------------------------------------------------------------- overview
@@ -274,24 +287,24 @@ with tab_over:
             unsafe_allow_html=True,
         )
     with right:
-        show(charts.health_gauge(a, MODE, height=330), "gauge_over")
-        show(charts.pillars_chart(a, MODE), "pillars_over")
+        show(charts.health_gauge(a, MODE, height=330), "gauge_over", "gauge")
+        show(charts.pillars_chart(a, MODE), "pillars_over", "pillars")
     c1, c2 = st.columns(2)
     with c1:
-        show(charts.revenue_income_chart(a, MODE), "revenue_over")
+        show(charts.revenue_income_chart(a, MODE), "revenue_over", "revenue")
     with c2:
-        show(charts.tone_index_chart(a, MODE), "tone_over")
+        show(charts.tone_index_chart(a, MODE), "tone_over", "tone")
 
 # ----------------------------------------------------------------------------- financials
 with tab_fin:
     c1, c2 = st.columns(2)
     with c1:
-        show(charts.revenue_income_chart(a, MODE), "revenue_income_chart_2")
-        show(charts.margins_chart(a, MODE), "margins_chart_1")
-        show(charts.balance_chart(a, MODE), "balance_chart_1")
+        show(charts.revenue_income_chart(a, MODE), "revenue_income_chart_2", "revenue")
+        show(charts.margins_chart(a, MODE), "margins_chart_1", "margins")
+        show(charts.balance_chart(a, MODE), "balance_chart_1", "balance")
     with c2:
-        show(charts.growth_chart(a, MODE), "growth_chart_1")
-        show(charts.cash_chart(a, MODE), "cash_chart_1")
+        show(charts.growth_chart(a, MODE), "growth_chart_1", "growth")
+        show(charts.cash_chart(a, MODE), "cash_chart_1", "cash")
     st.subheader("Quarter-by-quarter")
     st.dataframe(pd.DataFrame(data_table(a)).set_index("Quarter"), width="stretch")
     st.caption("Fourth-quarter flows are derived as full-year minus nine months, as 10-K filings report annual totals.")
@@ -300,11 +313,11 @@ with tab_fin:
 with tab_sent:
     c1, c2 = st.columns(2)
     with c1:
-        show(charts.tone_index_chart(a, MODE), "tone_index_chart_2")
-        show(charts.lm_categories_chart(a, "mdna", MODE), "lm_categories_chart_mdna_1")
+        show(charts.tone_index_chart(a, MODE), "tone_index_chart_2", "tone")
+        show(charts.lm_categories_chart(a, "mdna", MODE), "lm_categories_chart_mdna_1", "lm_mdna")
     with c2:
-        show(charts.tone_sources_chart(a, MODE), "tone_sources_chart_1")
-        show(charts.risk_length_chart(a, MODE), "risk_length_chart_1")
+        show(charts.tone_sources_chart(a, MODE), "tone_sources_chart_1", "tone_sources")
+        show(charts.risk_length_chart(a, MODE), "risk_length_chart_1", "risk_length")
     st.subheader("Evidence: the sentences driving the scores")
     labels = [q.fq.label for q in a.quarters]
     pick = st.selectbox("Quarter", list(reversed(labels)), key="evidence_q")
@@ -332,12 +345,12 @@ with tab_sent:
 with tab_health:
     c1, c2, c3 = st.columns([1, 1.15, 1.45])
     with c1:
-        show(charts.health_gauge(a, MODE, height=320), "gauge_health")
+        show(charts.health_gauge(a, MODE, height=320), "gauge_health", "gauge")
     with c2:
-        show(charts.pillars_chart(a, MODE, height=320), "pillars_chart_1")
+        show(charts.pillars_chart(a, MODE, height=320), "pillars_chart_1", "pillars")
     with c3:
-        show(charts.fscore_chart(a, MODE, height=320), "fscore_chart_1")
-    show(charts.health_trend_chart(a, MODE), "health_trend_chart_1")
+        show(charts.fscore_chart(a, MODE, height=320), "fscore_chart_1", "fscore")
+    show(charts.health_trend_chart(a, MODE), "health_trend_chart_1", "health")
     h = latest.health or {"metrics": {}, "metric_scores": {}}
     c1, c2 = st.columns(2)
     with c1:
@@ -362,6 +375,43 @@ with tab_health:
                 width="stretch",
             )
     st.caption("Scorecard thresholds are generic rules of thumb (see docs/METHODOLOGY.md), not industry-specific benchmarks.")
+
+# ----------------------------------------------------------------------------- guide
+with tab_guide:
+    st.markdown(
+        '<div class="ep-card"><div class="ep-card-head"><h3>New to earnings reports? Start here</h3></div>'
+        '<ul class="ep-ins-list">'
+        '<li class="ep-ins neutral"><span class="ep-ins-icon">1</span><span class="ep-ins-area">The numbers</span>'
+        "<span>Each quarter the company reports what it sold (revenue), what it kept (margins, net income) and the "
+        "cash it generated. Compare each quarter with the <b>same quarter last year</b>, because many businesses "
+        "are seasonal.</span></li>"
+        '<li class="ep-ins neutral"><span class="ep-ins-icon">2</span><span class="ep-ins-area">The words</span>'
+        "<span>Management also explains the results in writing. The <b>tone index</b> measures how upbeat or "
+        "cautious that language is. A change in tone can come before a change in the numbers.</span></li>"
+        '<li class="ep-ins neutral"><span class="ep-ins-icon">3</span><span class="ep-ins-area">The health</span>'
+        "<span>The <b>health score</b> (0-100) and <b>F-Score</b> (0-9) summarise financial strength and whether "
+        "it is improving.</span></li>"
+        '<li class="ep-ins neutral"><span class="ep-ins-icon">4</span><span class="ep-ins-area">The verdict</span>'
+        "<span><b>What changed</b> on the Overview tab lists every signal; the overall direction counts positives "
+        "against negatives. Every figure links to its source filing.</span></li></ul></div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("#### Every chart, explained")
+    gcols = st.columns(2)
+    for i, (gkey, g) in enumerate(explain.CHART_GUIDES.items()):
+        with gcols[i % 2].expander(g["title"], icon=":material/insert_chart:"):
+            st.markdown(explain.guide_markdown(gkey))
+    st.markdown("#### Glossary")
+    q = st.text_input("Search terms", placeholder="e.g. EPS, TTM, FinBERT", key="glossary_q",
+                      label_visibility="collapsed")
+    terms = [(t, d) for t, d in explain.GLOSSARY.items()
+             if not q or q.lower() in t.lower() or q.lower() in d.lower()]
+    st.markdown(
+        '<div class="ep-gloss">' + "".join(
+            f'<div class="ep-term"><b>{html.escape(t)}</b><span>{html.escape(d)}</span></div>' for t, d in terms
+        ) + "</div>" if terms else '<p class="ep-note">No matching terms.</p>',
+        unsafe_allow_html=True,
+    )
 
 # ----------------------------------------------------------------------------- sources
 with tab_src:

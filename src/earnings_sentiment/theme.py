@@ -201,6 +201,8 @@ div[data-testid="stPlotlyChart"] {{
 .stTabs [role="tab"][aria-selected="true"] p, .stTabs [role="tab"][aria-selected="true"] div {{ color: #fff !important; }}
 .stTabs [role="tab"]::after, .stTabs [role="tab"]::before {{ display: none !important; }}
 .stTabs [role="tablist"] > :not([role="tab"]) {{ display: none !important; }}
+/* the pill already marks the active tab: hide Streamlit's 2px selection indicator */
+.stTabs .react-aria-SelectionIndicator, .stTabs [class*="SelectionIndicator"] {{ display: none !important; }}
 .stTabs [role="tabpanel"] {{ padding-top: 18px; }}
 
 /* KPI sparklines in brand violet */
@@ -219,5 +221,18 @@ div[data-testid="stMainBlockContainer"] div[data-testid="stDownloadButton"] butt
 }}
 div[data-testid="stExpander"] details {{ border-radius: 14px; border-color: {v['card_border']}; background: {v['card']}; }}
 div[data-testid="stDataFrame"] {{ border-radius: 12px; overflow: hidden; }}
+
+/* glossary */
+.ep-gloss {{ display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }}
+.ep-term {{ background: {v['card']}; border: 1px solid {v['card_border']}; border-radius: 12px; padding: 12px 14px;
+  font-size: 13.5px; line-height: 1.5; }}
+.ep-term b {{ display:block; margin-bottom: 3px; color: {ACCENT}; }}
+.ep-term span {{ color: {v['muted']}; }}
+
+/* "How to read this chart" trigger sits quietly under each chart card */
+div[data-testid="stPopover"] {{ margin: -6px 0 10px 4px; }}
+div[data-testid="stPopover"] button {{ font-size: 12.5px; color: {v['muted']}; padding: 2px 6px; min-height: 0; }}
+div[data-testid="stPopover"] button:hover {{ color: {ACCENT}; }}
+div[data-testid="stPopoverBody"] {{ max-width: 460px; border-radius: 14px; }}
 </style>
 """

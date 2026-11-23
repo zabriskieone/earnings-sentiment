@@ -78,12 +78,19 @@ def _layout(fig: go.Figure, title: str, mode: str, subtitle: str = "", y_format:
         legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="right", x=1, font=dict(size=11, color=p["muted"]),
                     itemsizing="constant", bgcolor="rgba(0,0,0,0)"),
         hovermode="x unified",
-        hoverlabel=dict(bgcolor=p["hover_bg"], bordercolor=p["hover_border"], font=dict(color=p["text"], family=FONT, size=12)),
+        hoverlabel=dict(bgcolor=p["hover_bg"], bordercolor=p["hover_border"], namelength=-1,
+                        font=dict(color=p["text"], family=FONT, size=12.5), align="left"),
         font=dict(family=FONT, size=12, color=p["muted"]),
         bargap=0.42,
         bargroupgap=0.18,
         barcornerradius="50%",
     )
+    # Hover guide: a hairline in soft brand violet for line charts; bar charts get none (see _bars_hover)
+    fig.update_xaxes(showspikes=True, spikemode="across", spikesnap="cursor", spikethickness=1, spikedash="solid",
+                     spikecolor=_rgba(p["series"][0], 0.35))
+    fig.update_yaxes(showspikes=False)
+    if any(t.type == "bar" for t in fig.data):
+        fig.update_xaxes(showspikes=False)
     fig.update_xaxes(showgrid=False, showline=False, zeroline=False, type="category", ticks="",
                      tickfont=dict(size=11, color=p["muted"]), automargin=True)
     fig.update_yaxes(showgrid=True, gridcolor=p["grid"], griddash="dot", zeroline=False, showline=False, ticks="",
@@ -92,7 +99,7 @@ def _layout(fig: go.Figure, title: str, mode: str, subtitle: str = "", y_format:
 
 
 def _spline(fig: go.Figure, x, y, name: str, color: str, fill: bool = True, dash: str | None = None,
-            hover: str = "%{y}", width: float = 2.6) -> None:
+            hover: str = "<b>%{y}</b>", width: float = 2.6) -> None:
     kw = {}
     if fill:
         kw = dict(fill="tozeroy", fillgradient=dict(type="vertical",
@@ -135,8 +142,8 @@ def revenue_income_chart(a: Analysis, mode: str = "light") -> go.Figure:
     fig.add_bar(x=x, y=[rev.max() * 1.18] * len(x), marker_color=p["track"], width=0.56, hoverinfo="skip",
                 showlegend=False)
     rev_colors = [_rgba(p["series"][0], 0.55)] * (len(x) - 1) + [p["series"][0]]
-    fig.add_bar(x=x, y=rev, name="Revenue", marker_color=rev_colors, width=0.56, hovertemplate="$%{y:,.1f}B")
-    fig.add_bar(x=x, y=ni, name="Net income", marker_color=p["series"][1], width=0.24, hovertemplate="$%{y:,.1f}B")
+    fig.add_bar(x=x, y=rev, name="Revenue", marker_color=rev_colors, width=0.56, hovertemplate="<b>$%{y:,.1f}B</b>")
+    fig.add_bar(x=x, y=ni, name="Net income", marker_color=p["series"][1], width=0.24, hovertemplate="<b>$%{y:,.1f}B</b>")
     fig.update_layout(barmode="overlay")
     fig.add_annotation(x=x[-1], y=rev.iloc[-1], text=f"<b>${rev.iloc[-1]:,.1f}B</b>", showarrow=False, yshift=16,
                        font=dict(size=11, color="#fff"), bgcolor=p["series"][0], borderpad=5)
@@ -148,8 +155,8 @@ def growth_chart(a: Analysis, mode: str = "light") -> go.Figure:
     df = _fin(a)
     x = [_short(i) for i in df.index]
     fig = go.Figure()
-    _spline(fig, x, df["revenue_yoy"], "Revenue", p["series"][0], hover="%{y:+.1%}")
-    _spline(fig, x, df["eps_diluted_yoy"], "Diluted EPS", p["series"][1], fill=False, hover="%{y:+.1%}")
+    _spline(fig, x, df["revenue_yoy"], "Revenue", p["series"][0], hover="<b>%{y:+.1%}</b>")
+    _spline(fig, x, df["eps_diluted_yoy"], "Diluted EPS", p["series"][1], fill=False, hover="<b>%{y:+.1%}</b>")
     fig.add_hline(y=0, line_color=p["muted"], line_width=1, opacity=0.35)
     _highlight_last(fig, x, list(df["revenue_yoy"]), p["series"][0], f"{df['revenue_yoy'].iloc[-1]:+.1%}", mode)
     return _layout(fig, "Year-on-year growth", mode, "vs the same quarter a year earlier", ".0%")
@@ -161,7 +168,7 @@ def margins_chart(a: Analysis, mode: str = "light") -> go.Figure:
     x = [_short(i) for i in df.index]
     fig = go.Figure()
     for i, (col, name) in enumerate((("gross_margin", "Gross"), ("operating_margin", "Operating"), ("net_margin", "Net"))):
-        _spline(fig, x, df[col], name, p["series"][i], fill=(i == 0), hover="%{y:.1%}")
+        _spline(fig, x, df[col], name, p["series"][i], fill=(i == 0), hover="<b>%{y:.1%}</b>")
     _highlight_last(fig, x, list(df["gross_margin"]), p["series"][0], f"{df['gross_margin'].iloc[-1]:.1%}", mode)
     fig.update_yaxes(rangemode="tozero")
     return _layout(fig, "Margins", mode, "share of revenue kept at each level", ".0%")
@@ -173,7 +180,7 @@ def cash_chart(a: Analysis, mode: str = "light") -> go.Figure:
     x = [_short(i) for i in df.index]
     fig = go.Figure()
     for i, (col, name) in enumerate((("ocf", "Operating cash flow"), ("fcf", "Free cash flow"), ("buybacks", "Buybacks"))):
-        fig.add_bar(x=x, y=df[col] / 1e9, name=name, marker_color=p["series"][i], hovertemplate="$%{y:,.1f}B")
+        fig.add_bar(x=x, y=df[col] / 1e9, name=name, marker_color=p["series"][i], hovertemplate="<b>$%{y:,.1f}B</b>")
     fig.update_layout(barmode="group")
     return _layout(fig, "Cash generation & buybacks", mode, "US$ billions per quarter")
 
@@ -183,8 +190,8 @@ def balance_chart(a: Analysis, mode: str = "light") -> go.Figure:
     df = _fin(a)
     x = [_short(i) for i in df.index]
     fig = go.Figure()
-    _spline(fig, x, df["net_cash"] / 1e9, "Net cash", p["series"][2], hover="$%{y:,.1f}B")
-    _spline(fig, x, df["total_debt"] / 1e9, "Total debt", p["series"][1], fill=False, dash="dot", hover="$%{y:,.1f}B")
+    _spline(fig, x, df["net_cash"] / 1e9, "Net cash", p["series"][2], hover="<b>$%{y:,.1f}B</b>")
+    _spline(fig, x, df["total_debt"] / 1e9, "Total debt", p["series"][1], fill=False, dash="dot", hover="<b>$%{y:,.1f}B</b>")
     fig.add_hline(y=0, line_color=p["muted"], line_width=1, opacity=0.35)
     nc = (df["net_cash"] / 1e9).tolist()
     _highlight_last(fig, x, nc, p["series"][2], f"${nc[-1]:,.1f}B", mode)
@@ -206,7 +213,7 @@ def tone_index_chart(a: Analysis, mode: str = "light") -> go.Figure:
         base = p["series"][0] if v >= 0 else p["neg"]
         colors.append(base if i == len(vals) - 1 else _rgba(base, 0.6))
     fig.add_bar(x=x, y=vals, marker_color=colors, width=0.32, name="Tone index",
-                hovertemplate="%{y:+.3f}<extra>Tone index</extra>")
+                hovertemplate="<b>%{y:+.3f}</b><extra>Tone index</extra>")
     fig.update_layout(barmode="overlay")
     fig.add_hline(y=0, line_color=p["muted"], line_width=1, opacity=0.4)
     last = vals.iloc[-1]
@@ -233,7 +240,7 @@ def tone_sources_chart(a: Analysis, mode: str = "light") -> go.Figure:
     fig = go.Figure()
     for i, (col, name) in enumerate(series):
         if col in st:
-            _spline(fig, x, st[col], name, p["series"][i % 3], fill=(i == 0), hover="%{y:+.3f}")
+            _spline(fig, x, st[col], name, p["series"][i % 3], fill=(i == 0), hover="<b>%{y:+.3f}</b>")
     fig.add_hline(y=0, line_color=p["muted"], line_width=1, opacity=0.35)
     return _layout(fig, "Tone by document & method", mode, "each scored from −1 (negative) to +1 (positive)", "+.2f")
 
@@ -246,7 +253,7 @@ def lm_categories_chart(a: Analysis, section: str = "mdna", mode: str = "light")
     for i, (suffix, name) in enumerate((("unc_pct", "Uncertainty"), ("neg_pct", "Negative"), ("lit_pct", "Litigious"))):
         col = f"{section}_{suffix}"
         if col in st:
-            _spline(fig, x, st[col], name, p["series"][i], fill=(i == 0), hover="%{y:.2f}%")
+            _spline(fig, x, st[col], name, p["series"][i], fill=(i == 0), hover="<b>%{y:.2f}%</b>")
     where = {"mdna": "MD&A", "risk": "risk factors", "press": "press release"}[section]
     return _layout(fig, "Cautious language", mode, f"Loughran-McDonald word share in {where}, % of words")
 
@@ -261,7 +268,7 @@ def risk_length_chart(a: Analysis, mode: str = "light") -> go.Figure:
     for form, color, name in (("10-K", p["series"][1], "Annual report (10-K): full list"),
                               ("10-Q", p["series"][0], "Quarterly (10-Q): changes only")):
         ys = [w if f.startswith(form) else None for w, f in zip(words, forms)]
-        fig.add_bar(x=x, y=ys, name=name, marker_color=color, width=0.42, hovertemplate="%{y:,.0f} words")
+        fig.add_bar(x=x, y=ys, name=name, marker_color=color, width=0.42, hovertemplate="<b>%{y:,.0f} words</b>")
     fig.update_layout(barmode="overlay")
     return _layout(fig, "Risk-factor section length", mode, "words · compare like with like (10-K vs 10-K)")
 
@@ -290,10 +297,10 @@ def health_trend_chart(a: Analysis, mode: str = "light") -> go.Figure:
     ht = a.health_table()
     x = [_short(i) for i in ht.index]
     fig = go.Figure()
-    _spline(fig, x, ht["overall"], "Overall", p["series"][0], hover="%{y:.0f}/100")
+    _spline(fig, x, ht["overall"], "Overall", p["series"][0], hover="<b>%{y:.0f}/100</b>")
     for i, pillar in enumerate(PILLARS, start=1):
         fig.add_scatter(x=x, y=ht[pillar], name=pillar, mode="lines", visible="legendonly",
-                        line=dict(color=p["series"][i % 3], width=2, shape="spline"), hovertemplate="%{y:.0f}")
+                        line=dict(color=p["series"][i % 3], width=2, shape="spline"), hovertemplate="<b>%{y:.0f}</b>")
     _highlight_last(fig, x, list(ht["overall"]), p["series"][0], f"{ht['overall'].iloc[-1]:.0f}", mode)
     fig.update_yaxes(range=[0, 108])
     fig = _layout(fig, "Health over time", mode, "0–100 · click a pillar below to add it", height=350)
@@ -313,7 +320,7 @@ def pillars_chart(a: Analysis, mode: str = "light", height: int = 300) -> go.Fig
                 marker=dict(color=vals, colorscale=[[0, _rgba(p["series"][0], 0.45)], [1, p["series"][0]]], cmin=0, cmax=100),
                 text=[f"<b>{v:.0f}</b>" for v in vals], textposition="inside", insidetextanchor="end", textangle=0,
                 constraintext="none", textfont=dict(color="#fff", size=11),
-                hovertemplate="%{y}: %{x:.0f}/100<extra></extra>")
+                hovertemplate="%{y}: <b>%{x:.0f}/100</b><extra></extra>")
     fig = _layout(fig, "Health pillars", mode, f"{a.latest.fq.label} · each 0–100", height=height, legend=False)
     fig.update_layout(barmode="overlay", hovermode="closest")
     fig.update_xaxes(type="linear", range=[0, 100], showticklabels=False)
@@ -330,7 +337,7 @@ def fscore_chart(a: Analysis, mode: str = "light", height: int = 330) -> go.Figu
     fig.add_bar(x=x, y=[9] * len(x), marker_color=p["track"], width=0.34, hoverinfo="skip", showlegend=False)
     colors = [_rgba(p["series"][2], 0.6)] * (len(x) - 1) + [p["series"][2]]
     fig.add_bar(x=x, y=vals, marker_color=colors, width=0.34, name="F-Score",
-                hovertemplate="%{y:.0f}/9<extra>Piotroski F-Score</extra>")
+                hovertemplate="<b>%{y:.0f}/9</b><extra>Piotroski F-Score</extra>")
     fig.update_layout(barmode="overlay")
     fig.update_yaxes(range=[0, 10], dtick=3)
     fig.add_annotation(x=x[-1], y=vals.iloc[-1], text=f"<b>{vals.iloc[-1]:.0f}/9</b>", showarrow=False, yshift=16,

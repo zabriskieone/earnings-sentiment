@@ -10,3 +10,5 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements-dev.txt
       - run: pytest -q
+      - name: Check installer scripts
+        run: bash -n install.sh && bash -n start.sh && bash -n "Start EarningsPulse.command"
