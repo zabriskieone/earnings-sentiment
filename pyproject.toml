@@ -11,12 +11,12 @@ requires-python = ">=3.10"
 license = { text = "MIT" }
 dependencies = [
   "streamlit>=1.50", "plotly>=6.0", "pandas>=2.2", "numpy>=1.26", "requests>=2.31",
-  "beautifulsoup4>=4.12", "lxml>=5.0", "pysentiment2>=0.1.1", "matplotlib>=3.8", "fpdf2>=2.8", "jinja2>=3.1", "onnxruntime>=1.18", "tokenizers>=0.15",
+  "beautifulsoup4>=4.12", "lxml>=5.0", "pysentiment2>=0.1.1", "matplotlib>=3.8", "fpdf2>=2.8", "jinja2>=3.1", "onnxruntime>=1.18", "tokenizers>=0.15", "fastapi>=0.110", "uvicorn>=0.29",
 ]
 
 [project.optional-dependencies]
 export = ["torch>=2.2", "transformers>=4.40", "onnx>=1.15"]  # only for tools/export_models.py
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "httpx>=0.27"]
 
 [project.scripts]
 earnings-sentiment = "earnings_sentiment.cli:main"
