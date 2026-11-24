@@ -367,22 +367,42 @@ def load_history() -> list[dict]:
         return []
 
 
+def snapshot(a: Analysis) -> dict:
+    """Headline numbers for one analysis, used by Recent analyses and the Portfolio table."""
+    def num(v):
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            return None
+        return None if math.isnan(v) or math.isinf(v) else v
+
+    lbl, ya = a.latest.fq.label, a.latest.fq.year_ago().label
+    st, ht, fin = a.sentiment_table(), a.health_table(), a.financials
+    col = lambda df, row, c: num(df.loc[row, c]) if (not df.empty and row in df.index and c in df.columns) else None
+    tone, tone_ya = col(st, lbl, "tone_index"), col(st, ya, "tone_index")
+    health, health_ya = col(ht, lbl, "overall"), col(ht, ya, "overall")
+    return {
+        "ticker": a.company.ticker, "name": a.company.name, "model_name": a.model_name, "latest": lbl,
+        "period_end": a.latest.period_end, "form": a.latest.filing.form, "filed": a.latest.filing.filing_date,
+        "verdict": verdict(build_insights(a))[0], "health": health, "band": (a.latest.health or {}).get("band"),
+        "health_change": health - health_ya if health is not None and health_ya is not None else None,
+        "tone": tone, "tone_change": tone - tone_ya if tone is not None and tone_ya is not None else None,
+        "revenue": col(fin, lbl, "revenue"), "revenue_yoy": col(fin, lbl, "revenue_yoy"),
+        "eps_yoy": col(fin, lbl, "eps_diluted_yoy"), "gross_margin": col(fin, lbl, "gross_margin"),
+        "fscore": (a.latest.fscore or {}).get("score"),
+    }
+
+
 def _record_history(job: "Job") -> None:
     a = job.analysis
     if not a:
         return
     try:
-        st = a.sentiment_table()
-        tone = st["tone_index"].iloc[-1] if "tone_index" in st else None
-        entry = clean({
-            "ticker": a.company.ticker, "name": a.company.name, "quarters": job.req.quarters,
-            "model_id": job.req.model_id, "model_name": a.model_name, "latest": a.latest.fq.label,
-            "verdict": verdict(build_insights(a))[0], "health": (a.latest.health or {}).get("overall"),
-            "tone": float(tone) if tone is not None else None, "analysed_at": time.time(),
-        })
+        entry = clean(snapshot(a) | {"quarters": job.req.quarters, "model_id": job.req.model_id,
+                                     "analysed_at": time.time()})
         hist = [h for h in load_history() if not (h["ticker"] == entry["ticker"] and h.get("model_id") == entry["model_id"])]
         hist.insert(0, entry)
-        _history_path().write_text(json.dumps(hist[:24], indent=1), encoding="utf-8")
+        _history_path().write_text(json.dumps(hist[:60], indent=1), encoding="utf-8")
     except Exception:
         pass  # history is a convenience; never fail an analysis over it
 
@@ -549,15 +569,22 @@ class WatchIn(BaseModel):
 
 @app.get("/api/watchlist", dependencies=auth)
 def get_watchlist() -> dict:
-    hist = {h["ticker"]: h for h in load_history()}
+    hist: dict[str, dict] = {}
+    for h in load_history():  # newest first: keep each company's latest analysis
+        hist.setdefault(h["ticker"], h)
     items = []
-    for i in watchlist.load():
+    wl = watchlist.load()
+    for i in wl:
         h = hist.get(i["ticker"]) or {}
-        items.append({k: v for k, v in i.items() if k != "seen"} | {
-            "verdict": h.get("verdict"), "health": h.get("health"), "tone": h.get("tone"),
-            "latest": h.get("latest"), "analysed_at": h.get("analysed_at")})
-    last = checker.last_run
+        snap = {k: h.get(k) for k in ("verdict", "health", "band", "health_change", "tone", "tone_change", "revenue",
+                                      "revenue_yoy", "eps_yoy", "gross_margin", "fscore", "latest", "period_end",
+                                      "analysed_at", "quarters", "model_name")}
+        items.append({k: v for k, v in i.items() if k != "seen"} | snap
+                     | {"batch": batch.state.get(i["ticker"])})
+    # companies are checked when added, too
+    last = max([checker.last_run or 0] + [i.get("last_checked") or 0 for i in wl]) or None
     return clean({"items": items, "checking": checker.running, "last_run": last, "error": checker.last_error,
+                  "batch": batch.summary(),
                   "next_run": (last + watchlist.CHECK_EVERY_SECONDS) if last else None,
                   "unread": sum(1 for a in watchlist.alerts() if not a["read"])})
 
@@ -571,6 +598,108 @@ def add_watch(body: WatchIn) -> dict:
         return clean({k: v for k, v in watchlist.add(client, body.ticker).items() if k != "seen"})
     except EdgarError as exc:
         raise HTTPException(404, str(exc))
+
+
+class BulkIn(BaseModel):
+    tickers: list[str]
+
+
+@app.post("/api/watchlist/bulk", dependencies=auth)
+def add_watch_bulk(body: BulkIn) -> dict:
+    """Add many tickers at once (pasted from a spreadsheet or a list)."""
+    client = _watch_client()
+    if client is None:
+        raise HTTPException(400, "Add your name and e-mail in Settings first (the SEC requires it).")
+    added, failed = [], []
+    for raw in dict.fromkeys(t.strip().upper().lstrip("$") for t in body.tickers if t.strip()):
+        try:
+            added.append(watchlist.add(client, raw)["ticker"])
+        except Exception as exc:
+            failed.append({"ticker": raw, "error": str(exc)})
+    return {"added": added, "failed": failed}
+
+
+class Batch:
+    """Analyse several companies one after another (kind to SEC's rate limit and to the CPU)."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.queue: list[str] = []
+        self.state: dict[str, dict] = {}  # ticker -> {status: queued|running|done|error, job_id, error}
+        self.thread: threading.Thread | None = None
+
+    def add(self, tickers: list[str]) -> None:
+        with self.lock:
+            if not self.thread or not self.thread.is_alive():  # a new run: forget the last run's results
+                self.state = {t: v for t, v in self.state.items() if v["status"] in ("queued", "running")}
+            for t in tickers:
+                if t not in self.queue and (self.state.get(t) or {}).get("status") not in ("queued", "running"):
+                    self.queue.append(t)
+                    self.state[t] = {"status": "queued"}
+            if not self.thread or not self.thread.is_alive():
+                self.thread = threading.Thread(target=self._run, daemon=True, name="portfolio-batch")
+                self.thread.start()
+
+    def cancel(self) -> None:
+        with self.lock:
+            for t in self.queue:
+                self.state.pop(t, None)
+            self.queue.clear()
+
+    def summary(self) -> dict:
+        with self.lock:
+            vals = list(self.state.values())
+        return {"queued": sum(v["status"] == "queued" for v in vals), "running": sum(v["status"] == "running" for v in vals),
+                "done": sum(v["status"] == "done" for v in vals), "errors": sum(v["status"] == "error" for v in vals)}
+
+    def _run(self) -> None:
+        while True:
+            with self.lock:
+                if not self.queue:
+                    return
+                t = self.queue.pop(0)
+                self.state[t] = {"status": "running"}
+            prev = next((h for h in load_history() if h["ticker"] == t), None)
+            job = Job(AnalysisIn(ticker=t, quarters=(prev or {}).get("quarters", 8)))
+            with _jobs_lock:
+                _jobs[job.id] = job
+            _run_job(job)
+            with self.lock:
+                self.state[t] = {"status": job.status, "job_id": job.id, "error": job.error}
+
+
+batch = Batch()
+
+
+class BatchIn(BaseModel):
+    tickers: list[str] | None = None  # None: every followed company
+    stale_only: bool = False          # only companies never analysed or with a newer filing
+
+
+@app.post("/api/portfolio/analyse", dependencies=auth)
+def portfolio_analyse(body: BatchIn) -> dict:
+    if not config.valid_user_agent(sec_user_agent()):
+        raise HTTPException(400, "Add your name and e-mail in Settings first (the SEC requires it).")
+    hist: dict[str, dict] = {}
+    for h in load_history():
+        hist.setdefault(h["ticker"], h)
+    tickers = body.tickers or [i["ticker"] for i in watchlist.load()]
+    if body.stale_only:
+        def stale(t: str) -> bool:
+            h, item = hist.get(t), next((i for i in watchlist.load() if i["ticker"] == t), None)
+            if not h:
+                return True
+            lf = (item or {}).get("last_filing") or {}
+            return lf.get("kind") == "report" and str(lf.get("filed", "")) > str(h.get("filed", ""))
+        tickers = [t for t in tickers if stale(t)]
+    batch.add([t.upper() for t in tickers])
+    return {"queued": tickers} | batch.summary()
+
+
+@app.delete("/api/portfolio/analyse", dependencies=auth)
+def portfolio_cancel() -> dict:
+    batch.cancel()
+    return batch.summary()
 
 
 @app.delete("/api/watchlist/{ticker}", dependencies=auth)

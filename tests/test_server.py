@@ -143,3 +143,41 @@ def test_watchlist_endpoints_need_identity_and_list_alerts(client):
     assert body["items"] == [] and body["unread"] == 0
     assert client.get("/api/alerts", headers=H).json() == []
     assert client.post("/api/alerts/read", json={}, headers=H).json()["ok"]
+
+
+def test_portfolio_batch_runs_companies_one_by_one(client, monkeypatch):
+    ran = []
+
+    def fake_run(job):
+        ran.append(job.req.ticker)
+        job.status = "error" if job.req.ticker == "BAD" else "done"
+        job.error = "boom" if job.req.ticker == "BAD" else ""
+
+    monkeypatch.setattr(server, "_run_job", fake_run)
+    monkeypatch.setattr(server, "sec_user_agent", lambda: "Jane Doe jane@example.com")
+    b = server.Batch()
+    monkeypatch.setattr(server, "batch", b)
+    r = client.post("/api/portfolio/analyse", json={"tickers": ["aapl", "BAD", "MSFT"]}, headers=H)
+    assert r.status_code == 200
+    b.thread.join(timeout=5)
+    assert ran == ["AAPL", "BAD", "MSFT"]
+    assert b.state["AAPL"]["status"] == "done" and b.state["BAD"] == {"status": "error", "job_id": b.state["BAD"]["job_id"], "error": "boom"}
+    assert b.summary() == {"queued": 0, "running": 0, "done": 2, "errors": 1}
+    assert all(b.state[t]["job_id"] in server._jobs for t in ran)
+
+
+def test_bulk_add_needs_identity(client):
+    assert client.post("/api/watchlist/bulk", json={"tickers": ["AAPL"]}, headers=H).status_code == 400
+
+
+def test_portfolio_uses_each_companys_newest_analysis(client, tmp_path):
+    import json
+    from earnings_sentiment import watchlist
+    (tmp_path / "history.json").write_text(json.dumps([
+        {"ticker": "AAPL", "model_id": None, "health": 81, "revenue_yoy": 0.12, "analysed_at": 2},
+        {"ticker": "AAPL", "model_id": "dictionary", "health": 70, "analysed_at": 1}]))
+    (tmp_path / "watchlist.json").write_text(json.dumps([
+        {"ticker": "AAPL", "name": "Apple Inc.", "cik": "0000320193", "seen": [], "last_checked": 1000, "last_filing": None}]))
+    body = client.get("/api/watchlist", headers=H).json()
+    assert body["items"][0]["health"] == 81 and body["items"][0]["revenue_yoy"] == 0.12
+    assert body["last_run"] == 1000 and "seen" not in body["items"][0]

@@ -59,7 +59,7 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels, ope
       .catch((e) => setError(String(e.message || e)));
   }, [jobId, job?.status, theme, results]);
 
-  // opened from the Watchlist: show a finished background analysis, or start one
+  // opened from Portfolio: show a finished background analysis, or start one
   const handledReq = useRef(0);
   useEffect(() => {
     if (!openReq || handledReq.current === openReq.at) return;
@@ -332,8 +332,8 @@ function Dashboard({ r, jobId, watched, toggleWatch, tab, setTab, guide, onExpor
     <>
       <div className="hero company">
         <button className={watched ? "btn watch on" : "btn watch"} onClick={() => toggleWatch(r.company.ticker).catch(() => {})}
-          aria-pressed={watched} title={watched ? "Stop following this company" : "Get an alert when this company files new results"}>
-          <Icon name="star" size={15} /> {watched ? "Watching" : "Watch"}
+          aria-pressed={watched} title={watched ? "Remove from your portfolio" : "Add to your portfolio: get an alert when it files new results"}>
+          <Icon name={watched ? "check" : "plus"} size={15} /> {watched ? "In portfolio" : "Add to portfolio"}
         </button>
         <CompanyLogo ticker={r.company.ticker} size={64} />
         <div>

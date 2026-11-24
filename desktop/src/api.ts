@@ -216,13 +216,21 @@ export type Storage = { data_dir: string; sizes: { filings: number; models: numb
 // ---- watchlist & alerts
 export type FilingInfo = { form: string; accession: string; filed: string; period: string | null; url: string; kind: "report" | "results" };
 
+export type BatchState = { status: "queued" | "running" | "done" | "error"; job_id?: string; error?: string };
+
 export type WatchItem = {
   ticker: string; name: string; cik: string; added_at: number; last_checked: number; error?: string;
-  last_filing: FilingInfo | null; verdict: string | null; health: number | null; tone: number | null;
-  latest: string | null; analysed_at: number | null;
+  last_filing: FilingInfo | null; verdict: string | null; health: number | null; band: string | null; health_change: number | null;
+  tone: number | null; tone_change: number | null; revenue: number | null; revenue_yoy: number | null; eps_yoy: number | null;
+  gross_margin: number | null; fscore: number | null; latest: string | null; period_end: string | null;
+  analysed_at: number | null; quarters: number | null; model_name: string | null; batch: BatchState | null;
 };
 
-export type WatchResponse = { items: WatchItem[]; checking: boolean; last_run: number | null; next_run: number | null; error: string; unread: number };
+export type BatchSummary = { queued: number; running: number; done: number; errors: number };
+
+export type WatchResponse = {
+  items: WatchItem[]; checking: boolean; last_run: number | null; next_run: number | null; error: string; unread: number; batch: BatchSummary;
+};
 
 export type Alert = FilingInfo & {
   id: string; ticker: string; name: string; created_at: number; read: boolean;

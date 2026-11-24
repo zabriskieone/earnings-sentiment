@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { alertText, api, notify, waitForEngine, type Alert, type Guide, type Settings, type WatchResponse } from "./api";
 import Analyze, { type OpenRequest } from "./Analyze";
-import WatchlistPage from "./Watchlist";
+import PortfolioPage from "./Portfolio";
 import Models from "./Models";
 import { GuidePage, SettingsPage } from "./Pages";
 import { AppMark, Icon } from "./components";
 
-type Page = "analyze" | "watchlist" | "models" | "guide" | "settings";
+type Page = "analyze" | "portfolio" | "models" | "guide" | "settings";
 
 const NAV: { id: Page; label: string; icon: string }[] = [
   { id: "analyze", label: "Analyze", icon: "analyze" },
-  { id: "watchlist", label: "Watchlist", icon: "star" },
+  { id: "portfolio", label: "Portfolio", icon: "star" },
   { id: "models", label: "Models", icon: "models" },
   { id: "guide", label: "Guide", icon: "guide" },
   { id: "settings", label: "Settings", icon: "settings" },
@@ -72,7 +72,7 @@ export default function App() {
       if (x.read || notified.current.has(x.id)) continue;
       notified.current.add(x.id);
       if (x.created_at >= startedAt.current - 5) notify(x.kind === "results" ? `${x.ticker}: results are out` : `${x.ticker}: new ${x.form}`,
-        alertText(x) + (x.kind === "report" ? " Analysing it now; open the Watchlist to see it." : ""));
+        alertText(x) + (x.kind === "report" ? " Analysing it now; open Portfolio to see it." : ""));
     }
   }, []);
   useEffect(() => {
@@ -121,7 +121,7 @@ export default function App() {
           {NAV.map((n) => (
             <button key={n.id} className={page === n.id ? "nav on" : "nav"} onClick={() => setPage(n.id)}>
               <Icon name={n.icon} /> {n.label}
-              {n.id === "watchlist" && unread > 0 && <span className="count" aria-label={`${unread} new alerts`}>{unread}</span>}
+              {n.id === "portfolio" && unread > 0 && <span className="count" aria-label={`${unread} new alerts`}>{unread}</span>}
               {n.id === "settings" && settings && !settings.sec_user_agent_valid && <span className="dot-alert" />}
             </button>
           ))}
@@ -139,7 +139,7 @@ export default function App() {
         {page === "analyze" && <Analyze theme={theme} guide={guide} secOk={!!settings?.sec_user_agent_valid}
           goSettings={() => setPage("settings")} goModels={() => setPage("models")} openGuide={openGuide}
           openReq={openReq} watched={watched} toggleWatch={toggleWatch} />}
-        {page === "watchlist" && <WatchlistPage watch={watch} alerts={alerts} secOk={!!settings?.sec_user_agent_valid} reload={loadWatch}
+        {page === "portfolio" && <PortfolioPage watch={watch} alerts={alerts} secOk={!!settings?.sec_user_agent_valid} reload={loadWatch}
           open={openCompany} goSettings={() => setPage("settings")} />}
         {page === "models" && <Models />}
         {page === "guide" && <GuidePage guide={guide} target={guideTarget} clearTarget={clearGuideTarget} />}
