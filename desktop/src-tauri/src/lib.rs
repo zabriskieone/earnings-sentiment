@@ -84,6 +84,7 @@ pub fn run() {
                 .arg(port.to_string())
                 .env("EARNINGSPULSE_TOKEN", &token)
                 .env("EARNINGSPULSE_DATA_DIR", &dir)
+                .env("EARNINGSPULSE_WATCH_PARENT", "1")
                 .stdin(Stdio::null());
             match log.as_ref().and_then(|f| f.try_clone().ok()) {
                 Some(f) => {

@@ -356,6 +356,19 @@ def guide() -> dict:
 
 
 # --------------------------------------------------------------------------- entry point
+def _exit_with_parent() -> None:
+    """Stop the engine if the desktop app that started it goes away (crash, force quit)."""
+    parent = os.getppid()
+
+    def watch() -> None:
+        while True:
+            time.sleep(1.5)
+            if os.getppid() != parent:  # re-parented: the app is gone
+                os._exit(0)
+
+    threading.Thread(target=watch, daemon=True, name="parent-watch").start()
+
+
 def main(argv: list[str] | None = None) -> None:
     global TOKEN
     import uvicorn
@@ -366,6 +379,8 @@ def main(argv: list[str] | None = None) -> None:
     args = ap.parse_args(argv)
     TOKEN = args.token
     config.DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if os.environ.get("EARNINGSPULSE_WATCH_PARENT"):
+        _exit_with_parent()
     print(f"EarningsPulse engine {__version__} on http://127.0.0.1:{args.port} (data: {config.DATA_DIR})", flush=True)
     uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
 

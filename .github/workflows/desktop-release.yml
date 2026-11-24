@@ -1,0 +1,104 @@
+name: desktop-release
+# Builds EarningsPulse.app for Apple silicon and Intel Macs on GitHub's macOS
+# machines and publishes a GitHub release with .dmg and .zip downloads.
+# Start it from the Actions tab ("Run workflow") with a version number.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version, e.g. 0.2.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15        # Apple silicon
+            arch: arm64
+          - runner: macos-15-intel  # Intel
+            arch: x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      VERSION: ${{ github.event.inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Freeze the analysis engine
+        run: |
+          pip install -r requirements.txt pyinstaller
+          pyinstaller packaging/engine.spec --distpath engine-dist --workpath build/engine --noconfirm
+          du -sh engine-dist/earningspulse-engine
+      - name: Smoke-test the frozen engine
+        run: |
+          EARNINGSPULSE_DATA_DIR="$RUNNER_TEMP/epdata" engine-dist/earningspulse-engine/earningspulse-engine --port 8799 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:8799/api/health && break; sleep 1; done
+          curl -sf http://127.0.0.1:8799/api/health | grep -q '"ok":true'
+          kill %1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Set version
+        working-directory: desktop
+        run: |
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          sed -i '' -E "s/\"version\": \"[^\"]+\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+          sed -i '' -E "s/^version = \"[^\"]+\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+      - name: Build the app
+        working-directory: desktop
+        run: |
+          npm ci
+          npx tauri build --bundles app,dmg
+      - name: Collect downloads
+        run: |
+          mkdir -p out
+          B=desktop/src-tauri/target/release/bundle
+          cp "$(ls $B/dmg/*.dmg | head -1)" "out/EarningsPulse_${VERSION}_${{ matrix.arch }}.dmg"
+          ditto -c -k --sequesterRsrc --keepParent "$B/macos/EarningsPulse.app" "out/EarningsPulse_${VERSION}_${{ matrix.arch }}.app.zip"
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-${{ matrix.arch }}
+          path: out/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.event.inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Publish release
+        run: |
+          cat > notes.md <<EOF
+          ## EarningsPulse ${VERSION} for Mac
+
+          **Install with one command** (Terminal):
+
+          \`\`\`bash
+          curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install-app.sh | bash
+          \`\`\`
+
+          Or download the \`.dmg\` for your Mac below: **arm64** = Apple silicon (M1 and later), **x64** = Intel.
+          This build is not yet signed by Apple: after dragging it to Applications, open it once, then go to
+          **System Settings → Privacy & Security → Open Anyway**. The one-command install avoids this step.
+
+          Sentiment models download from inside the app (Models screen).
+          EOF
+          gh release create "v${VERSION}" out/* --target "${{ github.sha }}" --title "EarningsPulse ${VERSION}" --notes-file notes.md
