@@ -9,3 +9,10 @@ __pycache__/
 venv/
 *.egg-info/
 .DS_Store
+# desktop build outputs
+engine-dist/
+build/
+desktop/node_modules/
+desktop/dist/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/

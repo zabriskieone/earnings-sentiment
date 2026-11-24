@@ -281,6 +281,31 @@ def report_csv(job_id: str) -> Response:
                     headers={"Content-Disposition": f'attachment; filename="{a.company.ticker}_quarters.csv"'})
 
 
+@app.post("/api/analyses/{job_id}/export", dependencies=auth)
+def export(job_id: str, kind: str = Query("pdf", pattern="^(pdf|html|csv)$")) -> dict:
+    """Save a report into ~/Downloads (desktop app) and return its path."""
+    from pathlib import Path
+
+    a = _done(job_id)
+    base = f"{a.company.ticker}_{a.latest.fq.slug}"
+    folder = Path.home() / "Downloads"
+    folder.mkdir(parents=True, exist_ok=True)
+    if kind == "pdf":
+        path, data = folder / f"{base}_report.pdf", build_pdf(a)
+    elif kind == "html":
+        path, data = folder / f"{base}_report.html", build_html(a, offline=True).encode("utf-8")
+    else:
+        buf = io.StringIO()
+        pd.DataFrame(data_table(a)).to_csv(buf, index=False)
+        path, data = folder / f"{a.company.ticker}_quarters.csv", buf.getvalue().encode("utf-8")
+    n = 1
+    while path.exists():  # never overwrite an earlier export
+        path = path.with_name(f"{path.stem.split(' (')[0]} ({n}){path.suffix}")
+        n += 1
+    path.write_bytes(data)
+    return {"path": str(path)}
+
+
 # --------------------------------------------------------------------------- models
 @app.get("/api/models", dependencies=auth)
 def list_models() -> dict:

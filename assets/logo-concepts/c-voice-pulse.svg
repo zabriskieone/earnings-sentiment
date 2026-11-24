@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e1b4b"/><stop offset="0.55" stop-color="#4c1d95"/><stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="bub" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ede9fe"/><stop offset="1" stop-color="#f5d0fe"/>
+    </linearGradient>
+    <linearGradient id="ln" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c1d95"/><stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)"/>
+  <!-- speech bubble = what management says -->
+  <path d="M250 250 H774 A90 90 0 0 1 864 340 V640 A90 90 0 0 1 774 730 H470 L330 840 L350 730 H250
+           A90 90 0 0 1 160 640 V340 A90 90 0 0 1 250 250 Z" fill="url(#bub)"/>
+  <!-- pulse inside = what the numbers show -->
+  <path d="M235 520 H360 L415 400 L480 640 L550 360 L610 520 H790" fill="none" stroke="url(#ln)"
+        stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="790" cy="520" r="30" fill="#7c3aed"/>
+</svg>

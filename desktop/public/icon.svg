@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e1b4b"/><stop offset="0.55" stop-color="#4c1d95"/><stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#f0abfc"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.8" cy="0.2" r="0.55">
+      <stop offset="0" stop-color="#f0abfc" stop-opacity="0.35"/><stop offset="1" stop-color="#f0abfc" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- macOS icon grid: 824px squircle-ish tile centred in 1024 -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#glow)"/>
+  <!-- four quarters: wide capsule bars on faint tracks -->
+  <g>
+    <rect x="236" y="300" width="112" height="480" rx="56" fill="#fff" opacity="0.10"/>
+    <rect x="392" y="300" width="112" height="480" rx="56" fill="#fff" opacity="0.10"/>
+    <rect x="548" y="300" width="112" height="480" rx="56" fill="#fff" opacity="0.10"/>
+    <rect x="704" y="300" width="112" height="480" rx="56" fill="#fff" opacity="0.10"/>
+    <rect x="236" y="590" width="112" height="190" rx="56" fill="url(#bar)" opacity="0.7"/>
+    <rect x="392" y="520" width="112" height="260" rx="56" fill="url(#bar)" opacity="0.8"/>
+    <rect x="548" y="450" width="112" height="330" rx="56" fill="url(#bar)" opacity="0.9"/>
+    <rect x="704" y="340" width="112" height="440" rx="56" fill="url(#bar)"/>
+  </g>
+  <!-- one clear pulse beat rising to the latest quarter -->
+  <path d="M196 560 H372 L430 430 L500 640 L572 400 L626 470 H690 L760 270" fill="none" stroke="#fff"
+        stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="760" cy="270" r="34" fill="#fff"/>
+</svg>

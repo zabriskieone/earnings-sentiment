@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e1b4b"/><stop offset="0.55" stop-color="#4c1d95"/><stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#f0abfc"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)"/>
+  <!-- four quarters as capsule bars on faint tracks -->
+  <g>
+    <rect x="232" y="250" width="96" height="540" rx="48" fill="#ffffff" opacity="0.10"/>
+    <rect x="392" y="250" width="96" height="540" rx="48" fill="#ffffff" opacity="0.10"/>
+    <rect x="552" y="250" width="96" height="540" rx="48" fill="#ffffff" opacity="0.10"/>
+    <rect x="712" y="250" width="96" height="540" rx="48" fill="#ffffff" opacity="0.10"/>
+    <rect x="232" y="560" width="96" height="230" rx="48" fill="url(#bar)" opacity="0.65"/>
+    <rect x="392" y="480" width="96" height="310" rx="48" fill="url(#bar)" opacity="0.75"/>
+    <rect x="552" y="410" width="96" height="380" rx="48" fill="url(#bar)" opacity="0.85"/>
+    <rect x="712" y="300" width="96" height="490" rx="48" fill="url(#bar)"/>
+  </g>
+  <!-- pulse running across the tops -->
+  <path d="M170 600 L280 600 L330 470 L390 650 L440 440 L520 520 L600 380 L660 470 L760 260 L860 260" fill="none"
+        stroke="#ffffff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
