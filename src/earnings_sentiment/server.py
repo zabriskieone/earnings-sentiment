@@ -32,9 +32,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
-from . import __version__, changes, charts, config, explain, logos, models
+from . import __version__, changes, charts, config, explain, logos, models, watchlist
 from .analysis import SECTIONS, Analysis, analyze
-from .edgar import EdgarClient, EdgarError
+from .edgar import FACTS_URL, EdgarClient, EdgarError
 from .health import METRIC_LABELS
 from .narrative import build_insights, verdict
 from .report import build_html, build_pdf, data_table, kpis, metric_value
@@ -175,6 +175,7 @@ class AnalysisIn(BaseModel):
     ticker: str
     quarters: int = 8
     model_id: str | None = None  # None -> active model; "dictionary" -> no neural model
+    refresh: bool = False  # re-download SEC financial data first (a new filing just arrived)
 
 
 class Job:
@@ -199,6 +200,9 @@ def _run_job(job: Job) -> None:
 
     try:
         mid = job.req.model_id
+        if job.req.refresh:
+            client = EdgarClient(sec_user_agent())
+            client.get_json(FACTS_URL.format(cik=client.lookup(job.req.ticker).cik), ttl_hours=0)
         job.analysis = analyze(job.req.ticker, max(4, min(12, job.req.quarters)),
                                use_finbert=(mid != "dictionary"), model_id=None if mid in (None, "dictionary") else mid,
                                user_agent=sec_user_agent(), progress=progress)
@@ -214,13 +218,17 @@ def _run_job(job: Job) -> None:
 def start_analysis(body: AnalysisIn) -> dict:
     if not config.valid_user_agent(sec_user_agent()):
         raise HTTPException(400, "Add your name and e-mail in Settings first (the SEC requires it).")
-    job = Job(body)
+    return {"job_id": _start_job(body).id}
+
+
+def _start_job(req: AnalysisIn) -> Job:
+    job = Job(req)
     with _jobs_lock:
         _jobs[job.id] = job
-        while len(_jobs) > 12:
+        while len(_jobs) > 16:
             _jobs.popitem(last=False)
     threading.Thread(target=_run_job, args=(job,), daemon=True, name=f"analysis-{job.id}").start()
-    return {"job_id": job.id}
+    return job
 
 
 def _job(job_id: str) -> Job:
@@ -391,7 +399,7 @@ def clear_history() -> dict:
 
 
 # --------------------------------------------------------------------------- storage
-MOVABLE = ("cache", "models", "summaries", "settings.json", "history.json")
+MOVABLE = ("cache", "models", "summaries", "settings.json", "history.json", "watchlist.json", "alerts.json")
 
 
 def _size(path) -> int:
@@ -519,6 +527,90 @@ def guide() -> dict:
     return {"charts": explain.CHART_GUIDES, "glossary": explain.GLOSSARY, "kpi_help": explain.KPI_HELP}
 
 
+# --------------------------------------------------------------------------- watchlist & alerts
+def _watch_client() -> EdgarClient | None:
+    ua = sec_user_agent()
+    return EdgarClient(ua) if config.valid_user_agent(ua) else None
+
+
+def _auto_analyse(item: dict) -> str | None:
+    """A watched company filed a new 10-Q/10-K: analyse it now so it is ready when the user looks."""
+    prev = next((h for h in load_history() if h["ticker"] == item["ticker"]), None)
+    req = AnalysisIn(ticker=item["ticker"], quarters=(prev or {}).get("quarters", 8), refresh=True)
+    return _start_job(req).id
+
+
+checker = watchlist.Checker(_watch_client, _auto_analyse)
+
+
+class WatchIn(BaseModel):
+    ticker: str
+
+
+@app.get("/api/watchlist", dependencies=auth)
+def get_watchlist() -> dict:
+    hist = {h["ticker"]: h for h in load_history()}
+    items = []
+    for i in watchlist.load():
+        h = hist.get(i["ticker"]) or {}
+        items.append({k: v for k, v in i.items() if k != "seen"} | {
+            "verdict": h.get("verdict"), "health": h.get("health"), "tone": h.get("tone"),
+            "latest": h.get("latest"), "analysed_at": h.get("analysed_at")})
+    last = checker.last_run
+    return clean({"items": items, "checking": checker.running, "last_run": last, "error": checker.last_error,
+                  "next_run": (last + watchlist.CHECK_EVERY_SECONDS) if last else None,
+                  "unread": sum(1 for a in watchlist.alerts() if not a["read"])})
+
+
+@app.post("/api/watchlist", dependencies=auth)
+def add_watch(body: WatchIn) -> dict:
+    client = _watch_client()
+    if client is None:
+        raise HTTPException(400, "Add your name and e-mail in Settings first (the SEC requires it).")
+    try:
+        return clean({k: v for k, v in watchlist.add(client, body.ticker).items() if k != "seen"})
+    except EdgarError as exc:
+        raise HTTPException(404, str(exc))
+
+
+@app.delete("/api/watchlist/{ticker}", dependencies=auth)
+def remove_watch(ticker: str) -> dict:
+    watchlist.remove(ticker)
+    return {"ok": True}
+
+
+@app.post("/api/watchlist/check", dependencies=auth)
+def check_watchlist() -> dict:
+    if checker.running:
+        return {"new": [], "busy": True}
+    return clean({"new": checker.run_now(), "busy": False})
+
+
+@app.get("/api/alerts", dependencies=auth)
+def get_alerts() -> list[dict]:
+    out = []
+    for a in watchlist.alerts():
+        job = _jobs.get(a.get("job_id") or "")
+        out.append(a | {"job_status": job.status if job else None})
+    return clean(out)
+
+
+class ReadIn(BaseModel):
+    id: str | None = None  # None marks every alert read
+
+
+@app.post("/api/alerts/read", dependencies=auth)
+def read_alerts(body: ReadIn) -> dict:
+    watchlist.mark_read(body.id)
+    return {"ok": True}
+
+
+@app.delete("/api/alerts", dependencies=auth)
+def clear_alerts() -> dict:
+    watchlist.clear_alerts()
+    return {"ok": True}
+
+
 # --------------------------------------------------------------------------- entry point
 def _exit_with_parent() -> None:
     """Stop the engine if the desktop app that started it goes away (crash, force quit)."""
@@ -545,6 +637,7 @@ def main(argv: list[str] | None = None) -> None:
     config.DATA_DIR.mkdir(parents=True, exist_ok=True)
     if os.environ.get("EARNINGSPULSE_WATCH_PARENT"):
         _exit_with_parent()
+    checker.start()
     print(f"EarningsPulse engine {__version__} on http://127.0.0.1:{args.port} (data: {config.DATA_DIR})", flush=True)
     uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
 

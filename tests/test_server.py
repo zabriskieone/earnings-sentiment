@@ -109,7 +109,7 @@ def test_changes_endpoint_compares_filings_offline(client, monkeypatch):
 
     qs = [QuarterResult(FiscalQuarter(y, 1), date(y - 1, 12, 28), filing(f"000-{y}", "10-Q", date(y, 1, 30)), None, None)
           for y in (2025, 2026)]
-    a = Analysis(Company("AAPL", "Apple Inc.", "320193"), "0925", None, qs, False, "test", "now")
+    a = Analysis(Company("0000320193", "AAPL", "Apple Inc."), "0925", None, qs, False, "test", "now")
     texts = {
         "000-2025.htm": ["Net sales rose 5% on strong iPhone demand across every region we serve.",
                          "Gross margin was hurt by the weaker yen during the quarter overall.",
@@ -135,3 +135,11 @@ def test_changes_endpoint_compares_filings_offline(client, monkeypatch):
     prev = client.get(f"/api/analyses/{job.id}/changes?quarter=FY2026 Q1&vs=prev", headers=H).json()
     assert prev["available"] is False and "more quarters" in prev["note"]
     assert client.get(f"/api/analyses/{job.id}/changes?quarter=FY2019 Q1", headers=H).status_code == 404
+
+
+def test_watchlist_endpoints_need_identity_and_list_alerts(client):
+    assert client.post("/api/watchlist", json={"ticker": "AAPL"}, headers=H).status_code == 400
+    body = client.get("/api/watchlist", headers=H).json()
+    assert body["items"] == [] and body["unread"] == 0
+    assert client.get("/api/alerts", headers=H).json() == []
+    assert client.post("/api/alerts/read", json={}, headers=H).json()["ok"]

@@ -3,9 +3,12 @@ import { api, openExternal, revealFile, isTauri, getEngine, type Company, type G
 import { ChartCard, CompanyLogo, Icon, Sparkline } from "./components";
 import ChangesTab from "./Changes";
 
+export type OpenRequest = { company: Company; jobId?: string; at: number };
+
 type Props = {
   theme: "light" | "dark"; guide: Guide | null; secOk: boolean;
   goSettings: () => void; goModels: () => void; openGuide: (key: string) => void;
+  openReq: OpenRequest | null; watched: Set<string>; toggleWatch: (ticker: string) => Promise<void>;
 };
 
 const QUARTER_OPTIONS = [
@@ -15,7 +18,7 @@ const QUARTER_OPTIONS = [
 const TABS = ["Overview", "Financials", "Sentiment", "Changes", "Health", "Sources"] as const;
 type Tab = (typeof TABS)[number];
 
-export default function Analyze({ theme, guide, secOk, goSettings, goModels, openGuide }: Props) {
+export default function Analyze({ theme, guide, secOk, goSettings, goModels, openGuide, openReq, watched, toggleWatch }: Props) {
   const [query, setQuery] = useState("AAPL");
   const [picked, setPicked] = useState<Company | null>({ ticker: "AAPL", name: "Apple Inc.", cik: "0000320193" });
   const [matches, setMatches] = useState<Company[]>([]);
@@ -56,7 +59,17 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels, ope
       .catch((e) => setError(String(e.message || e)));
   }, [jobId, job?.status, theme, results]);
 
-  async function run(over?: { company: Company; quarters: number; model: string }) {
+  // opened from the Watchlist: show a finished background analysis, or start one
+  const handledReq = useRef(0);
+  useEffect(() => {
+    if (!openReq || handledReq.current === openReq.at) return;
+    handledReq.current = openReq.at;
+    const prev = history.find((h) => h.ticker === openReq.company.ticker);
+    run({ company: openReq.company, quarters: prev?.quarters ?? quarters, model: prev?.model_id ?? "active", jobId: openReq.jobId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openReq]);
+
+  async function run(over?: { company: Company; quarters: number; model: string; jobId?: string }) {
     const company = over?.company ?? picked;
     const q = over?.quarters ?? quarters;
     const model = over?.model ?? modelChoice;
@@ -66,7 +79,11 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels, ope
     setTab("Overview");
     try {
       const body = { ticker: company.ticker, quarters: q, model_id: model === "active" ? null : model };
-      const { job_id } = await api<{ job_id: string }>("/api/analyses", { method: "POST", body: JSON.stringify(body) });
+      let job_id = over?.jobId;
+      if (job_id) {
+        try { await api<JobStatus>(`/api/analyses/${job_id}`); } catch { job_id = undefined; } // engine restarted since
+      }
+      if (!job_id) ({ job_id } = await api<{ job_id: string }>("/api/analyses", { method: "POST", body: JSON.stringify(body) }));
       setJobId(job_id);
       setJob({ job_id, status: "running", progress: 0, message: "Starting", error: "" });
       for (;;) {
@@ -277,7 +294,7 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels, ope
       )}
       {error && !launch && <div className="card error"><b>Something went wrong.</b> {error}</div>}
 
-      {result && jobId && <Dashboard r={result} jobId={jobId} tab={tab} setTab={setTab} guide={guide} onExport={exportReport} openGuide={openGuide} />}
+      {result && jobId && <Dashboard r={result} jobId={jobId} watched={watched.has(result.company.ticker)} toggleWatch={toggleWatch} tab={tab} setTab={setTab} guide={guide} onExport={exportReport} openGuide={openGuide} />}
 
       {toast && (
         <div className="toast">
@@ -307,13 +324,17 @@ function timeAgo(ts: number): string {
   return `${Math.round(s / 86400)} d ago`;
 }
 
-function Dashboard({ r, jobId, tab, setTab, guide, onExport, openGuide }: { r: Result; jobId: string; tab: Tab; setTab: (t: Tab) => void; guide: Guide | null; onExport: (k: "pdf" | "html" | "csv") => void; openGuide: (k: string) => void }) {
+function Dashboard({ r, jobId, watched, toggleWatch, tab, setTab, guide, onExport, openGuide }: { r: Result; jobId: string; watched: boolean; toggleWatch: (t: string) => Promise<void>; tab: Tab; setTab: (t: Tab) => void; guide: Guide | null; onExport: (k: "pdf" | "html" | "csv") => void; openGuide: (k: string) => void }) {
   const c = r.charts;
   const [evQ, setEvQ] = useState(r.evidence[0]?.quarter);
   const ev = useMemo(() => r.evidence.find((e) => e.quarter === evQ) ?? r.evidence[0], [r, evQ]);
   return (
     <>
       <div className="hero company">
+        <button className={watched ? "btn watch on" : "btn watch"} onClick={() => toggleWatch(r.company.ticker).catch(() => {})}
+          aria-pressed={watched} title={watched ? "Stop following this company" : "Get an alert when this company files new results"}>
+          <Icon name="star" size={15} /> {watched ? "Watching" : "Watch"}
+        </button>
         <CompanyLogo ticker={r.company.ticker} size={64} />
         <div>
           <h1>{r.company.name} <span className="ticker">{r.company.ticker}</span></h1>

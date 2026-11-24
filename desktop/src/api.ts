@@ -212,3 +212,42 @@ export type HistoryItem = {
 };
 
 export type Storage = { data_dir: string; sizes: { filings: number; models: number; summaries: number; logs: number } };
+
+// ---- watchlist & alerts
+export type FilingInfo = { form: string; accession: string; filed: string; period: string | null; url: string; kind: "report" | "results" };
+
+export type WatchItem = {
+  ticker: string; name: string; cik: string; added_at: number; last_checked: number; error?: string;
+  last_filing: FilingInfo | null; verdict: string | null; health: number | null; tone: number | null;
+  latest: string | null; analysed_at: number | null;
+};
+
+export type WatchResponse = { items: WatchItem[]; checking: boolean; last_run: number | null; next_run: number | null; error: string; unread: number };
+
+export type Alert = FilingInfo & {
+  id: string; ticker: string; name: string; created_at: number; read: boolean;
+  job_id: string | null; job_status: "running" | "done" | "error" | null;
+};
+
+/** A macOS notification (in the app) or a browser notification (development). Fails silently. */
+export async function notify(title: string, body: string) {
+  try {
+    if (isTauri()) {
+      const n = await import("@tauri-apps/plugin-notification");
+      let ok = await n.isPermissionGranted();
+      if (!ok) ok = (await n.requestPermission()) === "granted";
+      if (ok) n.sendNotification({ title, body });
+    } else if ("Notification" in window) {
+      if (Notification.permission === "default") await Notification.requestPermission();
+      if (Notification.permission === "granted") new Notification(title, { body });
+    }
+  } catch {
+    /* notifications are a nicety */
+  }
+}
+
+export function alertText(a: Alert): string {
+  return a.kind === "results"
+    ? `${a.name} released quarterly results (8-K, ${a.filed}).`
+    : `${a.name} filed its ${a.form === "10-K" ? "annual report (10-K)" : "quarterly report (10-Q)"} on ${a.filed}.`;
+}

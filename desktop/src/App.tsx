@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
-import { api, waitForEngine, type Guide, type Settings } from "./api";
-import Analyze from "./Analyze";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { alertText, api, notify, waitForEngine, type Alert, type Guide, type Settings, type WatchResponse } from "./api";
+import Analyze, { type OpenRequest } from "./Analyze";
+import WatchlistPage from "./Watchlist";
 import Models from "./Models";
 import { GuidePage, SettingsPage } from "./Pages";
 import { AppMark, Icon } from "./components";
 
-type Page = "analyze" | "models" | "guide" | "settings";
+type Page = "analyze" | "watchlist" | "models" | "guide" | "settings";
 
 const NAV: { id: Page; label: string; icon: string }[] = [
   { id: "analyze", label: "Analyze", icon: "analyze" },
+  { id: "watchlist", label: "Watchlist", icon: "star" },
   { id: "models", label: "Models", icon: "models" },
   { id: "guide", label: "Guide", icon: "guide" },
   { id: "settings", label: "Settings", icon: "settings" },
@@ -28,6 +30,11 @@ export default function App() {
   const [guideTarget, setGuideTarget] = useState<string | null>(null);
   const openGuide = useCallback((key: string) => { setGuideTarget(key); setPage("guide"); }, []);
   const clearGuideTarget = useCallback(() => setGuideTarget(null), []);
+  const [watch, setWatch] = useState<WatchResponse | null>(null);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [openReq, setOpenReq] = useState<OpenRequest | null>(null);
+  const notified = useRef<Set<string>>(new Set());
+  const startedAt = useRef(Date.now() / 1000);
   const [themePref, setThemePref] = useState<Settings["theme"]>("system");
   const [sysTheme, setSysTheme] = useState(systemTheme());
   const theme = themePref === "system" ? sysTheme : themePref;
@@ -57,6 +64,35 @@ export default function App() {
       .catch((e) => setBootError(String(e.message || e)));
   }, [loadSettings]);
 
+  // watchlist + alerts: the engine checks SEC; we poll it and turn new alerts into notifications
+  const loadWatch = useCallback(async () => {
+    const [w, a] = await Promise.all([api<WatchResponse>("/api/watchlist"), api<Alert[]>("/api/alerts")]);
+    setWatch(w); setAlerts(a);
+    for (const x of a) {
+      if (x.read || notified.current.has(x.id)) continue;
+      notified.current.add(x.id);
+      if (x.created_at >= startedAt.current - 5) notify(x.kind === "results" ? `${x.ticker}: results are out` : `${x.ticker}: new ${x.form}`,
+        alertText(x) + (x.kind === "report" ? " Analysing it now; open the Watchlist to see it." : ""));
+    }
+  }, []);
+  useEffect(() => {
+    if (!ready) return;
+    loadWatch().catch(() => {});
+    const t = window.setInterval(() => loadWatch().catch(() => {}), 20000);
+    return () => window.clearInterval(t);
+  }, [ready, loadWatch]);
+  const watched = new Set((watch?.items ?? []).map((i) => i.ticker));
+  const toggleWatch = async (ticker: string) => {
+    if (watched.has(ticker)) await api(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "DELETE" });
+    else await api("/api/watchlist", { method: "POST", body: JSON.stringify({ ticker }) });
+    await loadWatch();
+  };
+  const openCompany = (c: { ticker: string; name: string }, jobId?: string | null) => {
+    setOpenReq({ company: { ticker: c.ticker, name: c.name, cik: "" }, jobId: jobId ?? undefined, at: Date.now() });
+    setPage("analyze");
+  };
+  const unread = alerts.filter((a) => !a.read).length;
+
   const changeTheme = async (t: Settings["theme"]) => {
     setThemePref(t);
     try { await api("/api/settings", { method: "PUT", body: JSON.stringify({ theme: t }) }); } catch { /* keep local choice */ }
@@ -85,6 +121,7 @@ export default function App() {
           {NAV.map((n) => (
             <button key={n.id} className={page === n.id ? "nav on" : "nav"} onClick={() => setPage(n.id)}>
               <Icon name={n.icon} /> {n.label}
+              {n.id === "watchlist" && unread > 0 && <span className="count" aria-label={`${unread} new alerts`}>{unread}</span>}
               {n.id === "settings" && settings && !settings.sec_user_agent_valid && <span className="dot-alert" />}
             </button>
           ))}
@@ -100,7 +137,10 @@ export default function App() {
       <main className="main">
         <div className="drag-region top" data-tauri-drag-region />
         {page === "analyze" && <Analyze theme={theme} guide={guide} secOk={!!settings?.sec_user_agent_valid}
-          goSettings={() => setPage("settings")} goModels={() => setPage("models")} openGuide={openGuide} />}
+          goSettings={() => setPage("settings")} goModels={() => setPage("models")} openGuide={openGuide}
+          openReq={openReq} watched={watched} toggleWatch={toggleWatch} />}
+        {page === "watchlist" && <WatchlistPage watch={watch} alerts={alerts} secOk={!!settings?.sec_user_agent_valid} reload={loadWatch}
+          open={openCompany} goSettings={() => setPage("settings")} />}
         {page === "models" && <Models />}
         {page === "guide" && <GuidePage guide={guide} target={guideTarget} clearTarget={clearGuideTarget} />}
         {page === "settings" && <SettingsPage settings={settings} onSaved={(s) => setSettings(s)} theme={themePref} setTheme={changeTheme}
