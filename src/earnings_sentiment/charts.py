@@ -69,9 +69,10 @@ def _layout(fig: go.Figure, title: str, mode: str, subtitle: str = "", y_format:
     title_html = f"<b>{title}</b>" + (f"<br><span style='font-size:12px;color:{p['muted']}'>{subtitle}</span>"
                                       if subtitle else "")
     fig.update_layout(
-        title=dict(text=title_html, x=0.01, xanchor="left", y=0.97, yanchor="top", font=dict(size=15, color=p["text"])),
-        height=height,
-        margin=dict(l=8, r=22, t=86 if subtitle else 70, b=8),
+        title=dict(text=title_html, x=0.01, xanchor="left", y=1, yref="container", yanchor="top",
+                   pad=dict(t=18, l=4), font=dict(size=15, color=p["text"])),
+        height=height + 14,
+        margin=dict(l=8, r=22, t=100 if subtitle else 82, b=8),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         showlegend=legend,
@@ -285,10 +286,11 @@ def health_gauge(a: Analysis, mode: str = "light", height: int = 300) -> go.Figu
     fig.add_annotation(text=f"<b>{score:.0f}</b>", x=0.5, y=0.5, showarrow=False, font=dict(size=44, color=p["text"]))
     fig.add_annotation(text=f"{h.get('band', 'n/a')} · out of 100", x=0.5, y=0.33, showarrow=False,
                        font=dict(size=12, color=p["muted"]))
-    fig.update_layout(height=height, margin=dict(l=10, r=10, t=56, b=10), showlegend=False,
+    fig.update_layout(height=height, margin=dict(l=10, r=10, t=70, b=10), showlegend=False,
                       paper_bgcolor="rgba(0,0,0,0)", font=dict(family=FONT),
                       title=dict(text=f"<b>Health score</b><br><span style='font-size:12px;color:{p['muted']}'>"
-                                      f"{a.latest.fq.label}</span>", x=0.03, y=0.96, font=dict(size=15, color=p["text"])))
+                                      f"{a.latest.fq.label}</span>", x=0.03, y=1, yref="container", yanchor="top",
+                                 pad=dict(t=18, l=4), font=dict(size=15, color=p["text"])))
     return fig
 
 
