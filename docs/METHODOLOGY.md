@@ -268,7 +268,48 @@ positives exceed negatives by 3 or more, **Deteriorating** if the reverse, else
 
 ---
 
-## 8. Limitations
+## 8. Text changes (Changes tab)
+
+The MD&A or risk-factor section of a filing is split into sentences and matched
+against the same section of an earlier filing (the same fiscal quarter a year
+before by default, so a 10-Q is compared with a 10-Q and a 10-K with a 10-K).
+
+1. **Normalise** each sentence: lower case, punctuation removed, and numbers,
+   percentages, years and dates replaced by placeholders. "Net sales rose 8% in
+   2025" and "Net sales rose 12% in 2026" become the same sentence, so routine
+   figure updates do not count as changes.
+2. **Exact matches** after normalisation are *carried over*.
+3. Remaining sentences are compared word by word (`difflib.SequenceMatcher`);
+   the best pairs with similarity ≥ 0.72 are *reworded*. A rewording that
+   changes at most two words and adds no cautionary language is *minor*.
+4. Unmatched sentences in the new filing are *new*; unmatched sentences in the
+   old filing were *dropped*.
+
+Each new or reworded sentence is tagged with the Loughran-McDonald categories it
+contains (negative, uncertainty, litigious, constraining, positive) and, for the
+MD&A, scored by the active tone model. *Notable* rows contain cautionary words or
+have a model tone of at least ±0.5.
+
+The share of sentences new or substantively reworded is described as light
+(< 20%), usual (20–55%) or heavy (≥ 55%). These bands were calibrated on Apple
+and Microsoft 10-Q/10-K filings from 2025–26, where year-on-year MD&A changes
+ranged from about 30% to 52%; they are a rough guide, not a statistical test.
+
+Why it matters: Cohen, Malloy & Nguyen, "Lazy Prices", *Journal of Finance*
+75(3), 2020, pp. 1371–1415 (<https://doi.org/10.1111/jofi.12885>) found that most
+reports repeat the previous year's wording, and that firms which change it
+substantially see lower future returns and more negative news.
+
+## 9. Comparing companies
+
+Fiscal years differ, so each quarter is placed in the **calendar quarter that
+contains its midpoint** (period end minus 45 days). Apple's quarter ending 26 Sep
+and Microsoft's ending 30 Sep both fall in Jul–Sep; NVIDIA's quarter ending in late
+July (May–July) falls in Apr–Jun. The head-to-head table uses each company's
+latest analysed quarter and stars the strongest value per row (lowest for debt to
+equity, ignoring negative equity).
+
+## 10. Limitations
 
 * Word counts and language models measure *how management writes*, which
   companies manage carefully. Treat tone as one signal among many.

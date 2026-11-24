@@ -16,6 +16,15 @@ every quarterly result a company files with the US SEC and shows:
 * **Financial health**: a transparent 0–100 scorecard plus the Piotroski F-Score.
 * **What changed**: a plain-English summary of the latest quarter with an overall
   *Improving / Stable / Deteriorating* call.
+* **What changed in the words** *(new in 0.4)*: every sentence of the MD&A and risk
+  factors matched against the same quarter last year (or last quarter): new,
+  reworded and dropped sentences, with cautionary language flagged.
+* **Portfolio and alerts** *(new in 0.4)*: follow your companies in one sortable
+  table (health, tone, growth, margins), paste a list of tickers to add them all,
+  and get a Mac notification when one files new results; new 10-Q/10-K reports are
+  analysed automatically while the app is open.
+* **Compare companies** *(new in 0.4)*: two or three side by side, lined up by
+  calendar quarter so different fiscal years compare fairly.
 * **Downloadable report** in HTML (interactive charts, works offline) or PDF,
   plus CSV/JSON data.
 
@@ -183,9 +192,13 @@ Use the ☀️/🌙 icon at the top right to switch between light and dark mode.
 | **Overview** | KPIs with YoY change, "what changed" bullets, revenue and tone charts |
 | **Financials** | Revenue/net income, YoY growth, margins, cash flow and buybacks, net cash vs debt, quarterly table |
 | **Sentiment** | Tone index, tone by document and method, LM word categories, risk-factor length, and the **evidence sentences** behind each score |
+| **Changes** *(Mac app)* | New, reworded and dropped sentences in the MD&A or risk factors vs a year ago or last quarter, with word-level highlights |
 | **Health** | Pillar scores, health trend, Piotroski F-Score with every signal |
 | **Guide** | A primer for beginners, every chart explained, and a searchable glossary |
 | **Sources & method** | Links to every filing used and a method summary |
+
+In the Mac app, **Portfolio** lists every company you follow with its latest verdict, health,
+tone, revenue growth, margins and F-Score; tick two or three rows to **Compare** them.
 
 **Data sources (all free and official)**
 
@@ -200,6 +213,7 @@ Use the ☀️/🌙 icon at the top right to switch between light and dark mode.
 * Araci (2019), *FinBERT* — <https://arxiv.org/abs/1908.10063>, model [`ProsusAI/finbert`](https://huggingface.co/ProsusAI/finbert)
 * Piotroski (2000), *Journal of Accounting Research* 38 — F-Score. <https://doi.org/10.2307/2672906>
 * Li (2010), *Journal of Accounting Research* 48(5) — MD&A tone predicts future performance. <https://doi.org/10.1111/j.1475-679X.2010.00382.x>
+* Cohen, Malloy & Nguyen (2020), *Lazy Prices*, *Journal of Finance* 75(3) — changes in 10-K/10-Q wording predict future returns (basis of the Changes tab). <https://doi.org/10.1111/jofi.12885>
 
 ---
 
@@ -222,6 +236,9 @@ src/earnings_sentiment/
   health.py                    scorecard + Piotroski F-Score
   analysis.py                  orchestration
   narrative.py                 "what changed" rules
+  textdiff.py / changes.py     sentence-level comparison of two filings (Changes tab)
+  watchlist.py                 followed companies, new-filing checks and alerts
+  compare.py                   side-by-side comparison by calendar quarter
   charts.py                    Plotly charts
   explain.py                   "how to read" guides and glossary
   logos.py                     company logos with monogram fallback
