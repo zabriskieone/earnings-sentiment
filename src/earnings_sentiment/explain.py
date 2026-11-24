@@ -93,6 +93,20 @@ CHART_GUIDES: dict[str, dict] = {
                 "were added.",
         "terms": ["Risk factors", "10-K", "10-Q"],
     },
+    "changes": {
+        "title": "What changed in the words (Changes tab)",
+        "what": "Every sentence of a quarter's MD&A or risk factors, matched against an earlier report: new "
+                "sentences, sentences that were reworded, and sentences that were dropped.",
+        "read": "Figures, dates and punctuation are ignored, so 'sales rose 5%' becoming 'sales rose 9%' counts as "
+                "carried over. Green rows are new, amber rows were reworded (struck-through words were removed, "
+                "highlighted words added) and red rows were dropped. Tags show cautionary words (negative, uncertain, "
+                "legal, constraining) from the Loughran-McDonald dictionary; 'Notable only' keeps those rows.",
+        "good": "Compare with the same quarter a year ago: it pairs a 10-Q with a 10-Q and a 10-K with a 10-K. A "
+                "heavy rewrite, or many new cautionary sentences, is worth reading closely. Research (Cohen, Malloy "
+                "and Nguyen, 'Lazy Prices', Journal of Finance 2020) found that companies that change their report "
+                "wording a lot tend to underperform afterwards.",
+        "terms": ["MD&A", "Risk factors", "Lazy Prices"],
+    },
     "gauge": {
         "title": "Health score",
         "what": "A single 0-100 score summarising the company's financial strength in the latest quarter.",
@@ -128,6 +142,9 @@ CHART_GUIDES: dict[str, dict] = {
 }
 
 GLOSSARY: dict[str, str] = {
+    "Lazy Prices": "A 2020 study by Cohen, Malloy and Nguyen (Journal of Finance) showing that most reports repeat "
+                   "last year's wording, and that firms which change it substantially tend to see weaker returns "
+                   "and news afterwards. The Changes tab shows those edits.",
     "10-K": "The annual report every US-listed company files with the SEC. It covers the full fiscal year and "
             "lists every major risk.",
     "10-Q": "The quarterly report filed for the first three quarters of the fiscal year. Shorter than a 10-K.",

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, openExternal, revealFile, isTauri, getEngine, type Company, type Guide, type HistoryItem, type JobStatus, type ModelsResponse, type Result } from "./api";
 import { ChartCard, CompanyLogo, Icon, Sparkline } from "./components";
+import ChangesTab from "./Changes";
 
 type Props = {
   theme: "light" | "dark"; guide: Guide | null; secOk: boolean;
@@ -11,7 +12,7 @@ const QUARTER_OPTIONS = [
   { n: 4, hint: "1 year" }, { n: 6, hint: "1.5 years" }, { n: 8, hint: "2 years" }, { n: 10, hint: "2.5 years" }, { n: 12, hint: "3 years" },
 ];
 
-const TABS = ["Overview", "Financials", "Sentiment", "Health", "Sources"] as const;
+const TABS = ["Overview", "Financials", "Sentiment", "Changes", "Health", "Sources"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function Analyze({ theme, guide, secOk, goSettings, goModels, openGuide }: Props) {
@@ -276,7 +277,7 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels, ope
       )}
       {error && !launch && <div className="card error"><b>Something went wrong.</b> {error}</div>}
 
-      {result && <Dashboard r={result} tab={tab} setTab={setTab} guide={guide} onExport={exportReport} openGuide={openGuide} />}
+      {result && jobId && <Dashboard r={result} jobId={jobId} tab={tab} setTab={setTab} guide={guide} onExport={exportReport} openGuide={openGuide} />}
 
       {toast && (
         <div className="toast">
@@ -306,7 +307,7 @@ function timeAgo(ts: number): string {
   return `${Math.round(s / 86400)} d ago`;
 }
 
-function Dashboard({ r, tab, setTab, guide, onExport, openGuide }: { r: Result; tab: Tab; setTab: (t: Tab) => void; guide: Guide | null; onExport: (k: "pdf" | "html" | "csv") => void; openGuide: (k: string) => void }) {
+function Dashboard({ r, jobId, tab, setTab, guide, onExport, openGuide }: { r: Result; jobId: string; tab: Tab; setTab: (t: Tab) => void; guide: Guide | null; onExport: (k: "pdf" | "html" | "csv") => void; openGuide: (k: string) => void }) {
   const c = r.charts;
   const [evQ, setEvQ] = useState(r.evidence[0]?.quarter);
   const ev = useMemo(() => r.evidence.find((e) => e.quarter === evQ) ?? r.evidence[0], [r, evQ]);
@@ -414,6 +415,8 @@ function Dashboard({ r, tab, setTab, guide, onExport, openGuide }: { r: Result; 
           </div>
         </>
       )}
+
+      {tab === "Changes" && <ChangesTab jobId={jobId} latest={r.latest.label} modelName={r.method.used_model ? r.method.model_name : null} openGuide={openGuide} />}
 
       {tab === "Health" && (
         <>

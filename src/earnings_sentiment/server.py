@@ -32,7 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
-from . import __version__, charts, config, explain, logos, models
+from . import __version__, changes, charts, config, explain, logos, models
 from .analysis import SECTIONS, Analysis, analyze
 from .edgar import EdgarClient, EdgarError
 from .health import METRIC_LABELS
@@ -280,6 +280,21 @@ def analysis_result(job_id: str, theme: str = "light") -> dict:
         "sources": a.sources(),
         "warnings": a.warnings,
     })
+
+
+@app.get("/api/analyses/{job_id}/changes", dependencies=auth)
+def analysis_changes(job_id: str, quarter: str = "", vs: str = Query("yoy", pattern="^(prev|yoy)$"),
+                     section: str = Query("mdna", pattern="^(mdna|risk)$")) -> dict:
+    """New, removed and reworded sentences in a quarter's MD&A or risk factors vs an earlier filing."""
+    a = _done(job_id)
+    label = quarter or a.latest.fq.label
+    try:
+        out = changes.compare(a, label, vs, section, sec_user_agent())
+    except KeyError:
+        raise HTTPException(404, f"{label} is not part of this analysis")
+    except EdgarError as exc:
+        raise HTTPException(502, str(exc))
+    return clean(out | {"options": changes.options(a)})
 
 
 @app.get("/api/analyses/{job_id}/report.html", dependencies=auth)

@@ -94,3 +94,44 @@ def test_clear_cache_keeps_models(client, tmp_path):
     (tmp_path / "models" / "m").write_text("m")
     client.post("/api/storage/clear-cache", headers=H)
     assert not (tmp_path / "cache").exists() and (tmp_path / "models" / "m").exists()
+
+
+def test_changes_endpoint_compares_filings_offline(client, monkeypatch):
+    from datetime import date
+
+    from earnings_sentiment import changes
+    from earnings_sentiment.analysis import Analysis, QuarterResult
+    from earnings_sentiment.edgar import Company, Filing
+    from earnings_sentiment.periods import FiscalQuarter
+
+    def filing(acc, form, day):
+        return Filing(form, acc, day, day, f"{acc}.htm", "", "320193")
+
+    qs = [QuarterResult(FiscalQuarter(y, 1), date(y - 1, 12, 28), filing(f"000-{y}", "10-Q", date(y, 1, 30)), None, None)
+          for y in (2025, 2026)]
+    a = Analysis(Company("AAPL", "Apple Inc.", "320193"), "0925", None, qs, False, "test", "now")
+    texts = {
+        "000-2025.htm": ["Net sales rose 5% on strong iPhone demand across every region we serve.",
+                         "Gross margin was hurt by the weaker yen during the quarter overall.",
+                         "The Company repurchased shares under its existing buyback program."],
+        "000-2026.htm": ["Net sales rose 9% on strong iPhone demand across every region we serve.",
+                         "The Company is experiencing supply constraints and rising memory costs.",
+                         "The Company repurchased shares under its existing buyback programs."],
+    }
+    monkeypatch.setattr(changes, "_section_sentences", lambda url, form, sec, ua: tuple(texts[url.rsplit("/", 1)[1]]))
+    job = server.Job(server.AnalysisIn(ticker="AAPL"))
+    job.status, job.analysis = "done", a
+    server._jobs[job.id] = job
+    monkeypatch.setattr(server, "sec_user_agent", lambda: "Jane Doe jane@example.com")
+
+    body = client.get(f"/api/analyses/{job.id}/changes?quarter=FY2026 Q1&vs=yoy&section=mdna", headers=H).json()
+    assert body["available"] and body["old_filing"]["label"] == "FY2025 Q1"
+    assert body["counts"]["unchanged"] == 1 and body["counts"]["added"] == 1 and body["counts"]["removed"] == 1
+    new = body["added"][0]
+    assert "constraints" in new["text"] and "constraining" in new["tags"] and new["notable"]
+    assert body["reworded"][0]["minor"] is True  # "program" -> "programs"
+    assert [o["quarter"] for o in body["options"]] == ["FY2026 Q1", "FY2025 Q1"]
+
+    prev = client.get(f"/api/analyses/{job.id}/changes?quarter=FY2026 Q1&vs=prev", headers=H).json()
+    assert prev["available"] is False and "more quarters" in prev["note"]
+    assert client.get(f"/api/analyses/{job.id}/changes?quarter=FY2019 Q1", headers=H).status_code == 404

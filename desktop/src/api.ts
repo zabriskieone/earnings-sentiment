@@ -183,6 +183,23 @@ export type Result = {
   warnings: string[];
 };
 
+export type ChangeItem = {
+  text: string; tags: string[]; tone: number | null; notable: boolean;
+  before?: string; similarity?: number; ops?: [string, string][]; new_tags?: string[]; minor?: boolean;
+};
+
+export type ChangeOption = { quarter: string; form?: string; prev?: string | null; prev_form?: string | null; yoy?: string | null; yoy_form?: string | null };
+type FilingRef = { label: string; form: string; filed: string; url: string };
+
+export type ChangesResponse = {
+  quarter: string; vs: "prev" | "yoy"; section: "mdna" | "risk"; section_name: string;
+  available: boolean; note?: string; options: ChangeOption[];
+  new_filing: FilingRef; old_filing?: FilingRef;
+  counts: { new_total: number; old_total: number; unchanged: number; added: number; removed: number; reworded: number; minor: number; share_changed: number };
+  summary: string; notes: string[]; model_name: string | null;
+  added: ChangeItem[]; removed: ChangeItem[]; reworded: ChangeItem[];
+};
+
 export type Guide = {
   charts: Record<string, { title: string; what: string; read: string; good: string; terms?: string[] }>;
   glossary: Record<string, string>;

@@ -7,7 +7,7 @@ const CHART_GROUPS: { id: string; title: string; icon: string; blurb: string; ke
   { id: "financials", title: "Financial charts", icon: "analyze", blurb: "What the company sold, kept and generated.",
     keys: ["revenue", "growth", "margins", "cash", "balance"] },
   { id: "sentiment", title: "Sentiment charts", icon: "spark", blurb: "How management talks about the results.",
-    keys: ["tone", "tone_sources", "lm_mdna", "risk_length"] },
+    keys: ["tone", "tone_sources", "lm_mdna", "risk_length", "changes"] },
   { id: "health", title: "Health charts", icon: "check", blurb: "Overall financial strength and whether it is improving.",
     keys: ["gauge", "pillars", "fscore", "health"] },
 ];
