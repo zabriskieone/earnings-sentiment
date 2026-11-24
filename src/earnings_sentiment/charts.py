@@ -222,7 +222,7 @@ def tone_index_chart(a: Analysis, mode: str = "light") -> go.Figure:
         fig.add_annotation(x=x[-1], y=last, text=f"<b>{last:+.2f}</b>", showarrow=False,
                            yshift=16 if last >= 0 else -16, font=dict(size=11, color="#fff"),
                            bgcolor=p["series"][0] if last >= 0 else p["neg"], borderpad=5)
-    method = "FinBERT" if a.used_finbert else "Loughran-McDonald"
+    method = a.model_name
     fig.update_yaxes(range=[-span * 1.05, span * 1.25])
     return _layout(fig, "Management tone index", mode, f"{method} · MD&A + press release · −1 to +1", "+.2f",
                    legend=False)
@@ -234,7 +234,7 @@ def tone_sources_chart(a: Analysis, mode: str = "light") -> go.Figure:
     x = [_short(i) for i in st.index]
     series = []
     if a.used_finbert:
-        series += [("press_finbert", "Press release · FinBERT"), ("mdna_finbert", "MD&A · FinBERT")]
+        series += [("press_finbert", f"Press release · {a.model_name}"), ("mdna_finbert", f"MD&A · {a.model_name}")]
     series += [("mdna_lm_tone", "MD&A · dictionary")]
     if not a.used_finbert:
         series += [("press_lm_tone", "Press release · dictionary")]

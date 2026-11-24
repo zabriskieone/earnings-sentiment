@@ -119,7 +119,7 @@ if [ ! -f "$FINBERT_CHOICE_FILE" ]; then
   choice="${EARNINGSPULSE_FINBERT:-}"
   if [ -z "$choice" ]; then
     echo "  FinBERT is an AI model that reads every sentence for tone (more accurate)."
-    echo "  It downloads about 600 MB once (PyTorch ~140 MB + the model 440 MB; ~1 GB on Linux)."
+    echo "  It downloads about 400 MB once. You can add or switch models later in the app."
     echo "  Without it the app uses the finance dictionary only (faster setup, still useful)."
     choice="$(ask "  Include FinBERT? [Y/n] " "y")"
   fi
@@ -131,7 +131,7 @@ req_hash() {
   "$PYV" - "$FINBERT" <<'PY'
 import hashlib, sys
 h = hashlib.sha256(sys.argv[1].encode())
-for f in ("requirements.txt", "requirements-finbert.txt"):
+for f in ("requirements.txt",):
     with open(f, "rb") as fh:
         h.update(fh.read())
 print(h.hexdigest())
@@ -146,45 +146,22 @@ else
   run_task "Installing app packages (~150 MB, usually 1-3 minutes)" "$LOG_DIR/pip-app.log" \
     "grep -c '^Collecting' '$LOG_DIR/pip-app.log' | sed 's/$/ packages fetched/'" -- \
     "${PIP[@]}" -r requirements.txt || die "Package install failed (full log: $LOG_DIR/pip-app.log)"
-  if [ "$FINBERT" = yes ]; then
-    if [ "$(uname -s)" = Linux ]; then
-      torch_args=(torch --index-url https://download.pytorch.org/whl/cpu)   # CPU build, much smaller on Linux
-    else
-      torch_args=(torch)
-    fi
-    if [ "$(uname -s)" = Linux ]; then
-      QUIET_FAIL=1 run_task "Installing PyTorch for FinBERT (CPU build, ~200 MB)" "$LOG_DIR/pip-torch.log" "" -- \
-        "${PIP[@]}" "${torch_args[@]}" \
-      || run_task "Installing PyTorch for FinBERT (standard build, ~1 GB+ on Linux, can take 5-10 minutes)" \
-           "$LOG_DIR/pip-torch2.log" "" -- "${PIP[@]}" torch \
-      || warn "PyTorch could not be installed; the app will use dictionary scoring."
-    else
-      run_task "Installing PyTorch for FinBERT (~140 MB)" "$LOG_DIR/pip-torch.log" "" -- "${PIP[@]}" "${torch_args[@]}" \
-        || warn "PyTorch could not be installed; the app will use dictionary scoring."
-    fi
-    run_task "Installing transformers for FinBERT" "$LOG_DIR/pip-finbert.log" "" -- \
-      "${PIP[@]}" -r requirements-finbert.txt || warn "FinBERT support could not be installed; dictionary scoring will be used."
-  fi
   req_hash > "$STAMP"
 fi
 
 # ---------------------------------------------------------------- 3. FinBERT model (once)
 step 3 "FinBERT model"
-MODEL_STAMP="$VENV/.finbert-model"
+MODEL_STAMP="$VENV/.model-finbert-onnx"   # ONNX model via the registry (replaces the old PyTorch download)
 if [ "$FINBERT" != yes ]; then
   ok "Skipped (dictionary scoring only). Run 'rm .venv/.finbert && ./start.sh' to add it later."
 elif [ -f "$MODEL_STAMP" ]; then
   ok "Already downloaded"
 else
-  HF_DIR="${HF_HOME:-$HOME/.cache/huggingface}/hub/models--ProsusAI--finbert"
-  run_task "Downloading the FinBERT model (440 MB, one time)" "$LOG_DIR/finbert-model.log" \
-    "du -sm '$HF_DIR' 2>/dev/null | awk '{print \$1\" / 440 MB\"}'" -- \
-    env HF_HUB_DISABLE_XET=1 "$PYV" -c "
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-AutoTokenizer.from_pretrained('ProsusAI/finbert')
-AutoModelForSequenceClassification.from_pretrained('ProsusAI/finbert')
-print('ok')" && touch "$MODEL_STAMP" \
-    || warn "The model could not be downloaded now; the app will try again on your first analysis."
+  MODEL_LOG="$LOG_DIR/finbert-model.log"
+  run_task "Downloading the FinBERT model (~400 MB, one time)" "$MODEL_LOG" \
+    "tr '\\r' '\\n' < '$MODEL_LOG' | grep -o '[0-9]* / [0-9]* MB' | tail -1" -- \
+    "$PYV" -m earnings_sentiment models download finbert && touch "$MODEL_STAMP" \
+    || warn "The model could not be downloaded now; you can download it later from the app."
 fi
 
 # ---------------------------------------------------------------- 4. SEC identity (.env, never committed)

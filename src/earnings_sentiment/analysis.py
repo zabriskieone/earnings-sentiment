@@ -44,10 +44,18 @@ class Analysis:
     fiscal_year_end: str
     financials: pd.DataFrame
     quarters: list[QuarterResult]
-    used_finbert: bool
+    used_finbert: bool  # True when a neural model (FinBERT or another) scored the text
     dictionary_source: str
     generated_at: str
     warnings: list[str] = field(default_factory=list)
+    model_id: str | None = None
+
+    @property
+    def model_name(self) -> str:
+        """Display name of the tone method, e.g. 'FinBERT' or 'Loughran-McDonald'."""
+        from .models import display_name
+
+        return display_name(self.model_id) if self.used_finbert else "Loughran-McDonald"
 
     @property
     def latest(self) -> QuarterResult:
@@ -116,6 +124,8 @@ class Analysis:
             "cik": self.company.cik,
             "generated_at": self.generated_at,
             "used_finbert": self.used_finbert,
+            "model_id": self.model_id,
+            "model_name": self.model_name,
             "dictionary_source": self.dictionary_source,
             "latest_quarter": self.latest.fq.label,
             "quarters": [
@@ -169,7 +179,10 @@ def _store_doc(client: EdgarClient, key: str, data: dict) -> None:
 
 def analyze(ticker: str, n_quarters: int = 8, use_finbert: bool = True,
             user_agent: str | None = None, progress: ProgressFn | None = None,
-            client: EdgarClient | None = None) -> Analysis:
+            client: EdgarClient | None = None, model_id: str | None = None) -> Analysis:
+    """use_finbert=False scores with the dictionary only; otherwise model_id (default:
+    the active model chosen on the Models screen) scores the MD&A and press release."""
+    from . import models
     say = progress or (lambda p, m: None)
     client = client or EdgarClient(user_agent)
     warnings: list[str] = []
@@ -179,9 +192,13 @@ def analyze(ticker: str, n_quarters: int = 8, use_finbert: bool = True,
     sub = client.submissions(company.cik)
     fye = sub.get("fiscalYearEnd") or "1231"
 
-    if use_finbert and not finbert_available():
-        warnings.append("FinBERT is not installed (needs torch + transformers); used dictionary scores only.")
-        use_finbert = False
+    if use_finbert:
+        model_id = model_id or models.active_model()
+        if not model_id or not finbert_available(model_id):
+            warnings.append("No sentiment model is downloaded (see the Models screen); used dictionary scores only.")
+            use_finbert, model_id = False, None
+    else:
+        model_id = None
 
     say(0.06, "Downloading financial data (XBRL company facts)")
     facts = client.company_facts(company.cik)
@@ -217,7 +234,7 @@ def analyze(ticker: str, n_quarters: int = 8, use_finbert: bool = True,
         try:
             text = None
             for sec in ("mdna", "risk"):
-                key = f"{filing.acc_nodash}_{sec}_{'fb' if use_finbert else 'lm'}_v{config.SENTIMENT_VERSION}"
+                key = f"{filing.acc_nodash}_{sec}_{model_id or 'lm'}_v{config.SENTIMENT_VERSION}"
                 doc = _cached_doc(client, key)
                 if doc is None:
                     if text is None:
@@ -228,13 +245,14 @@ def analyze(ticker: str, n_quarters: int = 8, use_finbert: bool = True,
                         continue
                     say(base + step * (0.2 if sec == "mdna" else 0.5), f"{fq.label}: scoring {SECTIONS[sec]}")
                     # FinBERT on risk factors adds little (they are negative by design), so LM only
-                    doc = score_document(section_text, sec, filing.document_url, use_finbert and sec == "mdna").to_dict()
+                    doc = score_document(section_text, sec, filing.document_url,
+                                         model_id if sec == "mdna" else None).to_dict()
                     _store_doc(client, key, doc)
                 q.docs[sec] = doc
         except (EdgarError, FinBertUnavailable) as exc:
             warnings.append(f"{fq.label}: {exc}")
             if isinstance(exc, FinBertUnavailable):
-                use_finbert = False
+                use_finbert, model_id = False, None
 
         # ---- earnings press release
         pr = match_press_release(filing.report_date, eight_ks)
@@ -244,12 +262,12 @@ def analyze(ticker: str, n_quarters: int = 8, use_finbert: bool = True,
                 url = client.press_release_url(pr)
                 q.press_url = url
                 if url:
-                    key = f"{pr.acc_nodash}_press_{'fb' if use_finbert else 'lm'}_v{config.SENTIMENT_VERSION}"
+                    key = f"{pr.acc_nodash}_press_{model_id or 'lm'}_v{config.SENTIMENT_VERSION}"
                     doc = _cached_doc(client, key)
                     if doc is None:
                         say(base + step * 0.75, f"{fq.label}: scoring earnings press release")
                         text = clean_press_release(html_to_text(client.get(url)))
-                        doc = score_document(text, "press", url, use_finbert).to_dict()
+                        doc = score_document(text, "press", url, model_id).to_dict()
                         _store_doc(client, key, doc)
                     q.docs["press"] = doc
             except (EdgarError, FinBertUnavailable) as exc:
@@ -275,6 +293,7 @@ def analyze(ticker: str, n_quarters: int = 8, use_finbert: bool = True,
         financials=fin,
         quarters=quarters,
         used_finbert=use_finbert,
+        model_id=model_id,
         dictionary_source=load_lm_dictionary()[1],
         generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         warnings=warnings,

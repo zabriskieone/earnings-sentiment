@@ -24,6 +24,7 @@ from earnings_sentiment.edgar import EdgarClient, EdgarError  # noqa: E402
 from earnings_sentiment.health import METRIC_LABELS  # noqa: E402
 from earnings_sentiment.narrative import build_insights, verdict  # noqa: E402
 from earnings_sentiment.report import DISCLAIMER, build_html, build_pdf, data_table, kpis, metric_value  # noqa: E402
+from earnings_sentiment import models  # noqa: E402
 from earnings_sentiment.sentiment import finbert_available  # noqa: E402
 
 st.set_page_config(page_title=f"{theme.APP_NAME} · {theme.TAGLINE}", page_icon=theme.APP_ICON, layout="wide")
@@ -145,10 +146,12 @@ with st.sidebar:
     quarters = st.slider("Quarters to analyse", 4, 12, 8,
                          help="More quarters = longer history; each new quarter takes a few seconds.")
     fb_ok = finbert_available()
-    use_fb = st.toggle("Use FinBERT (context-aware model)", value=fb_ok, disabled=not fb_ok,
-                       help="Scores every sentence with a finance-tuned language model. First use downloads "
-                            "about 440 MB. Off = Loughran-McDonald dictionary only (fast)."
-                            + ("" if fb_ok else " Not available: install torch and transformers."))
+    active_name = models.display_name(models.active_model()) if fb_ok else "FinBERT"
+    use_fb = st.toggle(f"Use AI tone model ({active_name})", value=fb_ok, disabled=not fb_ok,
+                       help="Scores every sentence with a finance-tuned language model running on this computer. "
+                            "Off = Loughran-McDonald dictionary only."
+                            + ("" if fb_ok else " No model downloaded yet: run "
+                               "`python -m earnings_sentiment models download finbert`."))
     go = st.button("Analyse", type="primary", width="stretch", disabled=choice is None)
     st.divider()
     st.caption(DISCLAIMER)
@@ -202,7 +205,7 @@ progress_bar.empty()
 insights = build_insights(a)
 verdict_label, verdict_detail = verdict(insights)
 latest = a.latest
-method = "FinBERT + Loughran-McDonald" if a.used_finbert else "Loughran-McDonald"
+method = f"{a.model_name} + Loughran-McDonald" if a.used_finbert else "Loughran-McDonald"
 st.markdown(
     f"""
 <div class="ep-hero ep-hero-co">
@@ -330,7 +333,7 @@ with tab_sent:
             m[1].metric("Negative words", f"{lm['negative_pct']:.2f}%" if lm.get("negative_pct") is not None else "n/a")
             m[2].metric("Uncertainty words", f"{lm['uncertainty_pct']:.2f}%" if lm.get("uncertainty_pct") is not None else "n/a")
             m[3].metric("Litigious words", f"{lm['litigious_pct']:.2f}%" if lm.get("litigious_pct") is not None else "n/a")
-            m[4].metric("FinBERT score", f"{d['finbert']['score']:+.2f}" if d.get("finbert") else "—")
+            m[4].metric(f"{a.model_name} score", f"{d['finbert']['score']:+.2f}" if d.get("finbert") else "—")
             if d.get("top_positive"):
                 st.markdown("**Most positive**")
                 for s in d["top_positive"]:
@@ -422,7 +425,7 @@ with tab_src:
     st.markdown(
         f"""
 - **Tone index**: average of the MD&A and press-release scores, from -1 (negative) to +1 (positive).
-  {'FinBERT score = P(positive) − P(negative), averaged over sentences.' if a.used_finbert else 'Loughran-McDonald net tone = (positive − negative) / (positive + negative) words.'}
+  {f'{a.model_name} score = P(positive) − P(negative), averaged over sentences.' if a.used_finbert else 'Loughran-McDonald net tone = (positive − negative) / (positive + negative) words.'}
 - **Dictionary**: {a.dictionary_source} — Loughran & McDonald (2011), *Journal of Finance* 66(1).
 - **FinBERT**: Araci (2019), arXiv:1908.10063, model `ProsusAI/finbert`.
 - **Financials**: SEC XBRL company facts; restated figures use the latest filing.

@@ -110,36 +110,24 @@ def lm_score(text: str) -> LMScore:
     return s
 
 
-# --------------------------------------------------------------------------- FinBERT
+# --------------------------------------------------------------------------- neural models
+# FinBERT and the other models run as ONNX files through onnxruntime (see models.py).
 
 
 class FinBertUnavailable(RuntimeError):
-    pass
+    """Raised when the chosen neural model cannot be loaded."""
 
 
-@functools.lru_cache(maxsize=1)
-def _finbert_pipeline():
+def finbert_available(model_id: str | None = None) -> bool:
+    """True when a neural sentiment model is downloaded and onnxruntime is present."""
+    from . import models
+
     try:
-        import torch  # noqa: F401
-        from transformers import pipeline  # heavy import, only when needed
-    except ImportError as exc:  # pragma: no cover - depends on install
-        raise FinBertUnavailable(
-            "FinBERT needs the 'torch' and 'transformers' packages. Install them or "
-            "turn FinBERT off; dictionary scores still work."
-        ) from exc
-    try:
-        return pipeline("text-classification", model=config.FINBERT_MODEL, top_k=None, truncation=True, max_length=512)
-    except Exception as exc:  # network / disk issues on first download
-        raise FinBertUnavailable(f"Could not load FinBERT model '{config.FINBERT_MODEL}': {exc}") from exc
-
-
-def finbert_available() -> bool:
-    try:
-        import torch  # noqa: F401
-        import transformers  # noqa: F401
-        return True
+        import onnxruntime  # noqa: F401
+        import tokenizers  # noqa: F401
     except ImportError:
         return False
+    return models.is_installed(model_id) if model_id else models.active_model() is not None
 
 
 @dataclass
@@ -154,16 +142,16 @@ class SentenceScore:
         return self.positive - self.negative
 
 
-def finbert_sentences(sents: list[str], batch_size: int = 16) -> list[SentenceScore]:
+def finbert_sentences(sents: list[str], model_id: str, batch_size: int = 16) -> list[SentenceScore]:
+    from . import models
+
     if not sents:
         return []
-    pipe = _finbert_pipeline()
-    results = pipe(sents, batch_size=batch_size)
-    out = []
-    for s, res in zip(sents, results):
-        probs = {r["label"].lower(): float(r["score"]) for r in res}
-        out.append(SentenceScore(s, probs.get("positive", 0.0), probs.get("negative", 0.0), probs.get("neutral", 0.0)))
-    return out
+    try:
+        m = models.load_model(model_id)
+    except Exception as exc:  # missing files, corrupt download, onnxruntime absent
+        raise FinBertUnavailable(f"Could not load the {models.display_name(model_id)} model: {exc}") from exc
+    return [SentenceScore(s, p.positive, p.negative, p.neutral) for s, p in zip(sents, m.predict(sents, batch_size))]
 
 
 # --------------------------------------------------------------------------- document level
@@ -183,16 +171,17 @@ class DocSentiment:
         return asdict(self)
 
 
-def score_document(text: str, section: str, source_url: str, use_finbert: bool,
+def score_document(text: str, section: str, source_url: str, model_id: str | None,
                    max_sentences: int = 600) -> DocSentiment:
+    """model_id=None scores with the dictionary only."""
     sents = split_sentences(text)
     lm = lm_score(" ".join(sents) if sents else text)
     doc = DocSentiment(section=section, source_url=source_url, n_sentences=len(sents), lm=lm.to_dict())
 
     scored: list[tuple[str, float]] = []
-    if use_finbert and sents:
+    if model_id and sents:
         sample = sents[:max_sentences]
-        fb = finbert_sentences(sample)
+        fb = finbert_sentences(sample, model_id)
         n = len(fb)
         doc.finbert = {
             "score": sum(x.score for x in fb) / n,
@@ -200,6 +189,7 @@ def score_document(text: str, section: str, source_url: str, use_finbert: bool,
             "negative_share": sum(x.negative > max(x.positive, x.neutral) for x in fb) / n,
             "neutral_share": sum(x.neutral >= max(x.positive, x.negative) for x in fb) / n,
             "sentences_scored": n,
+            "model": model_id,
         }
         scored = [(x.text, x.score) for x in fb]
     else:

@@ -34,7 +34,7 @@ if not exist ".venv\.finbert" (
     set "FB=%EARNINGSPULSE_FINBERT%"
   ) else (
     echo   FinBERT is an AI model that reads every sentence for tone ^(more accurate^).
-    echo   It downloads about 600 MB once ^(PyTorch ~130 MB + the model 440 MB^).
+    echo   It downloads about 400 MB once. You can add or switch models later in the app.
     set /p "FB=  Include FinBERT? [Y/n] "
   )
   if /i "!FB:~0,1!"=="n" (echo no> ".venv\.finbert") else (echo yes> ".venv\.finbert")
@@ -46,22 +46,14 @@ if not exist ".venv\.installed" (
   echo   [2/5] Installing app packages ^(~150 MB, usually 1-3 minutes^) ...
   "%PYV%" -m pip install --quiet --upgrade pip >nul 2>nul
   "%PYV%" -m pip install --disable-pip-version-check -r requirements.txt || (echo   Package install failed. & pause & exit /b 1)
-  if /i "!FINBERT!"=="yes" (
-    echo.
-    echo   Installing PyTorch + transformers for FinBERT ^(~150 MB^) ...
-    "%PYV%" -m pip install --disable-pip-version-check torch --index-url https://download.pytorch.org/whl/cpu || "%PYV%" -m pip install --disable-pip-version-check torch
-    "%PYV%" -m pip install --disable-pip-version-check -r requirements-finbert.txt || echo   FinBERT could not be installed; dictionary scoring will be used.
-  )
   echo done> ".venv\.installed"
 )
 
 REM ---------------------------------------------------------------- 3. FinBERT model (once)
-if /i "!FINBERT!"=="yes" if not exist ".venv\.finbert-model" (
+if /i "!FINBERT!"=="yes" if not exist ".venv\.model-finbert-onnx" (
   echo.
-  echo   [3/5] Downloading the FinBERT model ^(440 MB, one time; progress bars below^) ...
-  set "HF_HUB_DISABLE_XET=1"
-  "%PYV%" -c "from transformers import AutoModelForSequenceClassification as M, AutoTokenizer as T; T.from_pretrained('ProsusAI/finbert'); M.from_pretrained('ProsusAI/finbert')" && echo done> ".venv\.finbert-model"
-  set "HF_HUB_DISABLE_XET="
+  echo   [3/5] Downloading the FinBERT model ^(~400 MB, one time^) ...
+  "%PYV%" -m earnings_sentiment models download finbert && echo done> ".venv\.model-finbert-onnx"
 )
 
 REM ---------------------------------------------------------------- 4. SEC identity

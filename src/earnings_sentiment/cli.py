@@ -14,6 +14,7 @@ import argparse
 import csv
 import json
 import sys
+import time
 
 from . import config
 from .analysis import analyze
@@ -83,6 +84,44 @@ def snapshot(ticker: str, quarters: int, use_finbert: bool) -> str:
     return str(out_dir)
 
 
+def models_cmd(action: str, model_id: str | None) -> int:
+    from . import models
+
+    if action == "list":
+        active = models.active_model()
+        for m in models.catalog():
+            state = "installed" if models.is_installed(m["id"]) else "not downloaded"
+            mark = "*" if m["id"] == active else " "
+            print(f"{mark} {m['id']:18s} {m['name']:20s} {m['size_bytes'] / 1e6:5.0f} MB  {state:15s} {m['tagline']}")
+        print("\n* = active model.  Download: python -m earnings_sentiment models download <id>")
+        return 0
+    if not model_id:
+        print("Please give a model id (see: models list)", file=sys.stderr)
+        return 2
+    if action == "download":
+        last = [0.0]
+
+        def show(st):
+            if time.time() - last[0] > 0.2 or st.status == "done":
+                last[0] = time.time()
+                pct = st.done / st.total if st.total else 0
+                print(f"\r  {models.display_name(model_id)}: {st.done / 1e6:5.0f} / {st.total / 1e6:.0f} MB "
+                      f"({pct:4.0%})", end="", flush=True)
+
+        models.download(model_id, progress=show)
+        print()
+        if not models.load_settings().get("active_model"):
+            models.set_active(model_id)
+        print(f"Installed {models.display_name(model_id)}.")
+    elif action == "use":
+        models.set_active(None if model_id == "none" else model_id)
+        print(f"Active model: {models.display_name(models.active_model())}")
+    elif action == "remove":
+        models.remove(model_id)
+        print(f"Removed {model_id}.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="earnings_sentiment", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -91,7 +130,13 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("tickers", nargs="+")
     sp.add_argument("--quarters", type=int, default=8, help="number of recent quarters (default 8)")
     sp.add_argument("--no-finbert", action="store_true", help="dictionary scoring only (fast, no model download)")
+    mp = sub.add_parser("models", help="list, download, select or remove sentiment models")
+    mp.add_argument("action", choices=["list", "download", "use", "remove"])
+    mp.add_argument("model_id", nargs="?", help="e.g. finbert, finbert-tone, distilroberta-fin, or 'none'")
     args = parser.parse_args(argv)
+
+    if args.cmd == "models":
+        return models_cmd(args.action, args.model_id)
 
     status = 0
     for t in args.tickers:

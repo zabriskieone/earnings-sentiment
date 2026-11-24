@@ -166,7 +166,7 @@ details.howto p { margin: 6px 0; line-height: 1.5; }
 <h2>Sources (every figure is traceable)</h2>
 <table><tr><th>Document</th><th>Link</th></tr>{% for s in sources %}<tr><td>{{ s.what }}</td><td><a href="{{ s.url }}">{{ s.url }}</a></td></tr>{% endfor %}</table>
 <h2>Method</h2>
-<p class="note">Tone: {{ "FinBERT (Araci 2019, ProsusAI/finbert) sentence scores, P(positive) - P(negative)" if a.used_finbert else "Loughran-McDonald net tone" }}, averaged over the MD&amp;A and the earnings press release.
+<p class="note">Tone: {{ (a.model_name ~ " sentence scores (model: " ~ (a.model_id or "") ~ "), P(positive) - P(negative)") if a.used_finbert else "Loughran-McDonald net tone" }}, averaged over the MD&amp;A and the earnings press release.
 Dictionary: {{ a.dictionary_source }} (Loughran &amp; McDonald 2011). Financials: SEC XBRL company facts; Q4 derived as full year minus nine months.
 Health: transparent five-pillar scorecard plus Piotroski (2000) F-Score on a trailing-twelve-month basis. Full methodology: docs/METHODOLOGY.md in the project repository.</p>
 {% if a.warnings %}<p class="note"><b>Data notes:</b> {{ a.warnings|join("; ") }}</p>{% endif %}
@@ -367,7 +367,7 @@ def _pdf_charts(a: Analysis) -> list[io.BytesIO]:
         _round_bar(ax, i, v, 0.3, base if i == len(tone) - 1 else (base + "99"), zorder=2)
     ax.axhline(0, color="#c9c3e3", lw=0.8, zorder=1)
     ax.set_xticks(range(len(tone)), [f"{lbl.split()[1]} '{lbl.split()[0][-2:]}" for lbl in st.index])
-    method = "FinBERT" if a.used_finbert else "dictionary"
+    method = a.model_name
     _mpl_style(ax, "Management tone index", f"{method} · MD&A + press release · -1 to +1")
     out.append(_png(fig))
 
@@ -546,7 +546,7 @@ def build_pdf(a: Analysis) -> bytes:
         pdf.set_font("Helvetica", size=7); pdf.set_text_color(42, 120, 214)
         pdf.multi_cell(W, 4, _ascii(s["url"]), link=s["url"], new_x="LMARGIN", new_y="NEXT")
     pdf.ln(2)
-    para("Method: " + ("FinBERT sentence-level scores (Araci 2019)" if a.used_finbert else "Loughran-McDonald net tone")
+    para("Method: " + (f"{a.model_name} sentence-level scores (ONNX, model id {a.model_id})" if a.used_finbert else "Loughran-McDonald net tone")
          + f"; dictionary: {a.dictionary_source} (Loughran & McDonald 2011); financials from SEC XBRL company facts; "
          "health = five-pillar scorecard + Piotroski (2000) F-Score on a TTM basis.", 8, (82, 81, 78))
     if a.warnings:

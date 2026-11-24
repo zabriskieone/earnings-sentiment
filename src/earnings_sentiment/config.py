@@ -35,17 +35,20 @@ SEC_USER_AGENT = os.environ.get("SEC_USER_AGENT", "").strip()
 # SEC fair-access limit is 10 requests/second; we stay well below it.
 SEC_MIN_INTERVAL_SECONDS = 0.15
 
-CACHE_DIR = Path(os.environ.get("EARNINGS_CACHE_DIR", PROJECT_ROOT / "data" / "cache"))
+# Everything the app writes (downloads cache, models, settings). The desktop app
+# points this at ~/Library/Application Support/EarningsPulse.
+DATA_DIR = Path(os.environ.get("EARNINGSPULSE_DATA_DIR", PROJECT_ROOT / "data"))
+CACHE_DIR = Path(os.environ.get("EARNINGS_CACHE_DIR", DATA_DIR / "cache"))
 SNAPSHOT_DIR = Path(os.environ.get("EARNINGS_SNAPSHOT_DIR", PROJECT_ROOT / "snapshots"))
 
 # Company-level JSON (filing list, XBRL facts) changes when new filings land,
 # so it is refreshed after this many hours. Individual filings never change.
 COMPANY_DATA_TTL_HOURS = 12
 
-FINBERT_MODEL = os.environ.get("FINBERT_MODEL", "ProsusAI/finbert")
+
 
 # Bump when the scoring logic changes so cached sentiment is recomputed.
-SENTIMENT_VERSION = "2"
+SENTIMENT_VERSION = "3"
 
 
 def valid_user_agent(ua: str) -> bool:

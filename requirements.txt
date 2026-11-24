@@ -10,3 +10,5 @@ pysentiment2>=0.1.1        # bundles the Loughran-McDonald word lists
 matplotlib>=3.8
 fpdf2>=2.8
 jinja2>=3.1
+onnxruntime>=1.18       # runs the sentiment models (FinBERT etc.) on CPU, no PyTorch needed
+tokenizers>=0.15

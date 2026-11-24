@@ -123,7 +123,7 @@ def build_insights(a: Analysis) -> list[Insight]:
     st = a.sentiment_table()
     if lbl in st.index:
         t_cur = _f(st.loc[lbl, "tone_index"])
-        method = "FinBERT" if a.used_finbert else "Loughran-McDonald"
+        method = a.model_name
         for ref_lbl, ref_name in ((prev_lbl, "last quarter"), (ya_lbl, "a year ago")):
             if ref_lbl in st.index and t_cur is not None:
                 t_ref = _f(st.loc[ref_lbl, "tone_index"])
