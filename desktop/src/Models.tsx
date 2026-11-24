@@ -36,7 +36,7 @@ export default function Models({ onChange }: { onChange?: () => void }) {
       <div className="page-head">
         <h2>Tone models</h2>
         <p className="muted">Models read every sentence of the MD&amp;A and press release and rate it positive, negative or neutral.
-          They run entirely on your Mac; nothing you analyse leaves your computer. Download one or more, then choose your default.</p>
+          They run entirely on your Mac; nothing you analyze leaves your computer. Download one or more, then choose your default.</p>
       </div>
       {error && <div className="card error">{error}</div>}
 
@@ -60,10 +60,13 @@ export default function Models({ onChange }: { onChange?: () => void }) {
         <div className="card model soon">
           <div className="model-top">
             <div className="model-icon"><Icon name="spark" /></div>
-            <div className="model-title"><h3>Local AI summaries</h3><span className="muted">Coming next</span></div>
+            <div className="model-title"><h3>Local AI summaries</h3><span className="muted">Planned for Phase 2</span></div>
             <span className="badge">Phase 2</span>
           </div>
-          <p>An optional local language model (2-5 GB) that writes a plain-English “what changed this quarter” summary, fully offline.</p>
+          <p>An optional small language model (about 2-5 GB) that writes a plain-English “what changed this quarter” brief,
+            fully offline. It will only use the figures and sentences EarningsPulse has already extracted, cite where each point
+            comes from, and be checked so every number it writes matches the data.</p>
+          <div className="model-meta"><span>Will appear here as a download, like the tone models</span></div>
         </div>
       </div>
       <p className="muted small" style={{ marginTop: 14 }}>* Speed measured on a standard 4-core CPU when the models were built;

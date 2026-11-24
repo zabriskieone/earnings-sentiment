@@ -25,6 +25,9 @@ export default function App() {
   const [page, setPage] = useState<Page>("analyze");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [guide, setGuide] = useState<Guide | null>(null);
+  const [guideTarget, setGuideTarget] = useState<string | null>(null);
+  const openGuide = useCallback((key: string) => { setGuideTarget(key); setPage("guide"); }, []);
+  const clearGuideTarget = useCallback(() => setGuideTarget(null), []);
   const [themePref, setThemePref] = useState<Settings["theme"]>("system");
   const [sysTheme, setSysTheme] = useState(systemTheme());
   const theme = themePref === "system" ? sysTheme : themePref;
@@ -74,9 +77,10 @@ export default function App() {
 
   return (
     <div className="shell">
-      <aside className="sidebar">
+      {/* The whole sidebar background (not its buttons) and the strip above each page move the window */}
+      <aside className="sidebar" data-tauri-drag-region>
         <div className="drag-region" data-tauri-drag-region />
-        <div className="brand"><AppMark size={34} /><div><b>EarningsPulse</b><span>Sentiment &amp; health from every quarterly result</span></div></div>
+        <div className="brand" data-tauri-drag-region><AppMark size={34} /><div data-tauri-drag-region><b data-tauri-drag-region>EarningsPulse</b><span data-tauri-drag-region>Sentiment &amp; health from every quarterly result</span></div></div>
         <nav>
           {NAV.map((n) => (
             <button key={n.id} className={page === n.id ? "nav on" : "nav"} onClick={() => setPage(n.id)}>
@@ -85,6 +89,7 @@ export default function App() {
             </button>
           ))}
         </nav>
+        <div className="sidebar-fill" data-tauri-drag-region />
         <div className="sidebar-foot">
           <button className="theme-toggle" onClick={() => changeTheme(theme === "dark" ? "light" : "dark")} title="Switch light / dark">
             <Icon name={theme === "dark" ? "sun" : "moon"} /> {theme === "dark" ? "Light mode" : "Dark mode"}
@@ -95,10 +100,11 @@ export default function App() {
       <main className="main">
         <div className="drag-region top" data-tauri-drag-region />
         {page === "analyze" && <Analyze theme={theme} guide={guide} secOk={!!settings?.sec_user_agent_valid}
-          goSettings={() => setPage("settings")} goModels={() => setPage("models")} />}
+          goSettings={() => setPage("settings")} goModels={() => setPage("models")} openGuide={openGuide} />}
         {page === "models" && <Models />}
-        {page === "guide" && <GuidePage guide={guide} />}
-        {page === "settings" && <SettingsPage settings={settings} onSaved={(s) => setSettings(s)} theme={themePref} setTheme={changeTheme} />}
+        {page === "guide" && <GuidePage guide={guide} target={guideTarget} clearTarget={clearGuideTarget} />}
+        {page === "settings" && <SettingsPage settings={settings} onSaved={(s) => setSettings(s)} theme={themePref} setTheme={changeTheme}
+          goModels={() => setPage("models")} />}
       </main>
     </div>
   );

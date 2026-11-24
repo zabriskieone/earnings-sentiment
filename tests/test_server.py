@@ -56,3 +56,41 @@ def test_unknown_analysis_is_404(client):
 def test_guide_has_charts_and_glossary(client):
     g = client.get("/api/guide", headers=H).json()
     assert "tone" in g["charts"] and "TTM" in g["glossary"]
+
+
+def test_identity_is_split_into_name_and_email(client):
+    r = client.put("/api/settings", json={"sec_name": "Jane  Doe", "sec_email": "jane@example.com"}, headers=H)
+    body = r.json()
+    assert r.status_code == 200 and body["sec_user_agent"] == "Jane Doe jane@example.com"
+    assert body["sec_name"] == "Jane Doe" and body["sec_email"] == "jane@example.com" and body["sec_user_agent_valid"]
+    assert client.put("/api/settings", json={"sec_name": "Jane", "sec_email": "not-an-email"}, headers=H).status_code == 400
+    assert client.put("/api/settings", json={"sec_name": "", "sec_email": "jane@example.com"}, headers=H).status_code == 400
+
+
+def test_storage_sizes_clear_and_move(client, tmp_path):
+    (tmp_path / "cache" / "http").mkdir(parents=True)
+    (tmp_path / "cache" / "http" / "a.json").write_text("x" * 100)
+    (tmp_path / "models" / "finbert").mkdir(parents=True)
+    (tmp_path / "models" / "finbert" / "model.onnx").write_text("y" * 50)
+    (tmp_path / "settings.json").write_text("{}")
+    st = client.get("/api/storage", headers=H).json()
+    assert st["sizes"]["filings"] == 100 and st["sizes"]["models"] == 50
+
+    target = tmp_path.parent / (tmp_path.name + "-elsewhere")
+    target.mkdir()
+    r = client.post("/api/storage/move", json={"target": str(target)}, headers=H).json()
+    dest = target / "EarningsPulse"
+    assert r["data_dir"] == str(dest) and r["moved"]
+    assert (dest / "models" / "finbert" / "model.onnx").exists() and (dest / "cache" / "http" / "a.json").exists()
+    assert not (tmp_path / "models").exists()  # old copy removed
+
+    assert client.post("/api/storage/move", json={"target": "/no/such/folder"}, headers=H).status_code == 400
+
+
+def test_clear_cache_keeps_models(client, tmp_path):
+    (tmp_path / "cache").mkdir()
+    (tmp_path / "cache" / "f").write_text("z")
+    (tmp_path / "models").mkdir()
+    (tmp_path / "models" / "m").write_text("m")
+    client.post("/api/storage/clear-cache", headers=H)
+    assert not (tmp_path / "cache").exists() and (tmp_path / "models" / "m").exists()

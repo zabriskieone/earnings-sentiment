@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, openExternal, revealFile, isTauri, getEngine, type Company, type Guide, type JobStatus, type ModelsResponse, type Result } from "./api";
+import { api, openExternal, revealFile, isTauri, getEngine, type Company, type Guide, type HistoryItem, type JobStatus, type ModelsResponse, type Result } from "./api";
 import { ChartCard, CompanyLogo, Icon, Sparkline } from "./components";
 
-type Props = { theme: "light" | "dark"; guide: Guide | null; secOk: boolean; goSettings: () => void; goModels: () => void };
+type Props = {
+  theme: "light" | "dark"; guide: Guide | null; secOk: boolean;
+  goSettings: () => void; goModels: () => void; openGuide: (key: string) => void;
+};
+
+const QUARTER_OPTIONS = [
+  { n: 4, hint: "1 year" }, { n: 6, hint: "1.5 years" }, { n: 8, hint: "2 years" }, { n: 10, hint: "2.5 years" }, { n: 12, hint: "3 years" },
+];
 
 const TABS = ["Overview", "Financials", "Sentiment", "Health", "Sources"] as const;
 type Tab = (typeof TABS)[number];
 
-export default function Analyze({ theme, guide, secOk, goSettings, goModels }: Props) {
+export default function Analyze({ theme, guide, secOk, goSettings, goModels, openGuide }: Props) {
   const [query, setQuery] = useState("AAPL");
   const [picked, setPicked] = useState<Company | null>({ ticker: "AAPL", name: "Apple Inc.", cik: "0000320193" });
   const [matches, setMatches] = useState<Company[]>([]);
@@ -21,6 +28,9 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels }: P
   const [jobId, setJobId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Overview");
   const [toast, setToast] = useState<{ text: string; path?: string } | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const loadHistory = () => api<HistoryItem[]>("/api/history").then(setHistory).catch(() => {});
+  useEffect(() => { loadHistory(); }, []);
   const searchTimer = useRef<number>();
 
   useEffect(() => {
@@ -45,12 +55,16 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels }: P
       .catch((e) => setError(String(e.message || e)));
   }, [jobId, job?.status, theme, results]);
 
-  async function run() {
-    if (!picked) return;
+  async function run(over?: { company: Company; quarters: number; model: string }) {
+    const company = over?.company ?? picked;
+    const q = over?.quarters ?? quarters;
+    const model = over?.model ?? modelChoice;
+    if (!company) return;
+    if (over) { setPicked(over.company); setQuery(over.company.ticker); setQuarters(q); setModelChoice(model); }
     setError("");
     setTab("Overview");
     try {
-      const body = { ticker: picked.ticker, quarters, model_id: modelChoice === "active" ? null : modelChoice };
+      const body = { ticker: company.ticker, quarters: q, model_id: model === "active" ? null : model };
       const { job_id } = await api<{ job_id: string }>("/api/analyses", { method: "POST", body: JSON.stringify(body) });
       setJobId(job_id);
       setJob({ job_id, status: "running", progress: 0, message: "Starting", error: "" });
@@ -60,6 +74,7 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels }: P
         setJob(st);
         if (st.status !== "running") {
           if (st.status === "error") setError(st.error);
+          else loadHistory();
           break;
         }
       }
@@ -92,55 +107,42 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels }: P
 
   const running = job?.status === "running";
   const installed = models?.models.filter((m) => m.installed) ?? [];
+  const launch = !result && !running;
+  const modelLabel = (id: string) =>
+    id === "active" ? (models?.active ? `${models.active_name} (default)` : "Dictionary only")
+      : id === "dictionary" ? "Dictionary only" : models?.models.find((m) => m.id === id)?.name ?? id;
 
-  return (
-    <div className="page">
-      {/* ------------------------------------------------ search bar */}
-      <div className="toolbar card">
-        <div className="search">
-          <Icon name="search" />
-          <input
-            value={query}
-            placeholder="Search a company or ticker (e.g. Apple, MSFT)"
-            onChange={(e) => { setQuery(e.target.value); setPicked(null); setShowList(true); }}
-            onFocus={() => setShowList(true)}
-            onBlur={() => window.setTimeout(() => setShowList(false), 150)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && matches[0] && !picked) { setPicked(matches[0]); setQuery(`${matches[0].ticker}`); setShowList(false); }
-              else if (e.key === "Enter" && picked) run();
-            }}
-            disabled={!secOk}
-          />
-          {picked && <span className="picked">{picked.name}</span>}
-          {showList && matches.length > 0 && (
-            <ul className="suggest">
-              {matches.map((c) => (
-                <li key={c.ticker} onMouseDown={() => { setPicked(c); setQuery(c.ticker); setShowList(false); }}>
-                  <b>{c.ticker}</b> <span>{c.name}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <label className="field">
-          <span>Quarters</span>
-          <select value={quarters} onChange={(e) => setQuarters(Number(e.target.value))}>
-            {[4, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n}</option>)}
-          </select>
-        </label>
-        <label className="field">
-          <span>Tone model</span>
-          <select value={modelChoice} onChange={(e) => setModelChoice(e.target.value)}>
-            <option value="active">{models?.active ? `${models.active_name} (default)` : "Dictionary only"}</option>
-            {installed.filter((m) => !m.active).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-            <option value="dictionary">Dictionary only</option>
-          </select>
-        </label>
-        <button className="btn primary" onClick={run} disabled={!picked || running || !secOk}>
-          {running ? "Analysing…" : "Analyse"}
-        </button>
-      </div>
+  const search = (
+    <div className={launch ? "search big" : "search"}>
+      <Icon name="search" />
+      <input
+        value={query}
+        placeholder="Search a company or ticker (e.g. Apple, MSFT)"
+        onChange={(e) => { setQuery(e.target.value); setPicked(null); setShowList(true); }}
+        onFocus={() => setShowList(true)}
+        onBlur={() => window.setTimeout(() => setShowList(false), 150)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && matches[0] && !picked) { setPicked(matches[0]); setQuery(`${matches[0].ticker}`); setShowList(false); }
+          else if (e.key === "Enter" && picked) run();
+        }}
+        disabled={!secOk}
+        aria-label="Company or ticker"
+      />
+      {picked && <span className="picked">{picked.name}</span>}
+      {showList && matches.length > 0 && (
+        <ul className="suggest">
+          {matches.map((c) => (
+            <li key={c.ticker} onMouseDown={() => { setPicked(c); setQuery(c.ticker); setShowList(false); }}>
+              <b>{c.ticker}</b> <span>{c.name}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 
+  const notices = (
+    <>
       {!secOk && (
         <div className="notice card">
           <Icon name="help" /> <span>The SEC asks every app that downloads filings for a name and e-mail.</span>
@@ -153,6 +155,118 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels }: P
           <button className="btn" onClick={goModels}>Browse models</button>
         </div>
       )}
+    </>
+  );
+
+  return (
+    <div className="page">
+      {launch ? (
+        <>
+          <div className="page-head" data-tauri-drag-region>
+            <h2 data-tauri-drag-region>Analyze a company</h2>
+            <p className="muted" data-tauri-drag-region>Pick a company, how far back to look and which tone model to use. Everything runs on your Mac.</p>
+          </div>
+          {notices}
+          <div className="launch">
+            <div className="card launch-form">
+              <label className="label">Company</label>
+              {search}
+
+              <label className="label">How many quarters</label>
+              <div className="segmented wide" role="radiogroup" aria-label="Quarters">
+                {QUARTER_OPTIONS.map((o) => (
+                  <button key={o.n} role="radio" aria-checked={quarters === o.n} className={quarters === o.n ? "on" : ""} onClick={() => setQuarters(o.n)}>
+                    <b>{o.n}</b><span>{o.hint}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="muted small">More quarters show longer trends; each new quarter adds a few seconds the first time.</p>
+
+              <label className="label">Tone model</label>
+              <div className="model-pick" role="radiogroup" aria-label="Tone model">
+                {models?.active && (
+                  <ModelOption id="active" on={modelChoice === "active"} title={`${models.active_name}`} sub="Your default model" icon="models" pick={setModelChoice} />
+                )}
+                {installed.filter((m) => !m.active).map((m) => (
+                  <ModelOption key={m.id} id={m.id} on={modelChoice === m.id} title={m.name} sub={m.tagline} icon={m.id.startsWith("distil") ? "bolt" : "models"} pick={setModelChoice} />
+                ))}
+                <ModelOption id="dictionary" on={modelChoice === "dictionary" || (!models?.active && modelChoice === "active")} title="Dictionary only"
+                  sub="Loughran-McDonald word lists, instant" icon="guide" pick={setModelChoice} />
+                {models && installed.length < models.models.length && (
+                  <button className="model-opt more" onClick={goModels}><Icon name="download" /><div><b>Get more models</b><span>FinBERT-tone, DistilRoBERTa…</span></div></button>
+                )}
+              </div>
+
+              <button className="btn primary block" onClick={() => run()} disabled={!picked || !secOk}>
+                <Icon name="analyze" size={16} /> Analyze {picked ? picked.ticker : ""}
+              </button>
+              {error && <div className="error small" style={{ marginTop: 10 }}>{error}</div>}
+            </div>
+
+            <div className="launch-side">
+              <div className="card recent">
+                <div className="card-head"><h3>Recent analyses</h3>
+                  {history.length > 0 && <button className="link-btn small" onClick={() => api("/api/history", { method: "DELETE" }).then(loadHistory)}>Clear</button>}
+                </div>
+                {history.length === 0 ? (
+                  <p className="muted small">Companies you analyze appear here, so you can reopen them in one click
+                    (results load from the local cache in seconds).</p>
+                ) : (
+                  <ul>
+                    {history.slice(0, 7).map((h) => (
+                      <li key={h.ticker + h.model_id}>
+                        <button onClick={() => run({ company: { ticker: h.ticker, name: h.name, cik: "" }, quarters: h.quarters, model: h.model_id ?? "active" })} disabled={!secOk}>
+                          <CompanyLogo ticker={h.ticker} size={34} />
+                          <div className="rec-main"><b>{h.ticker}</b><span>{h.name}</span></div>
+                          <div className="rec-meta">
+                            <span className={`pill ${h.verdict.startsWith("Improving") ? "up" : h.verdict.startsWith("Deteriorating") ? "down" : ""}`}>{h.verdict}</span>
+                            <span className="muted">{h.latest} · {timeAgo(h.analysed_at)}</span>
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="card how">
+                <h3>How it works</h3>
+                <ol>
+                  <li><b>Reads the filings:</b> each 10-Q / 10-K and earnings press release, straight from SEC EDGAR.</li>
+                  <li><b>Scores the tone:</b> finance dictionary plus the AI model you pick, sentence by sentence.</li>
+                  <li><b>Compares the numbers:</b> each quarter against the last one and the same quarter a year earlier.</li>
+                  <li><b>Rates the health:</b> a five-pillar score and the Piotroski F-Score.</li>
+                </ol>
+                <button className="link-btn small" onClick={() => openGuide("start")}>Read the Guide <Icon name="external" size={12} /></button>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="toolbar card">
+            <button className="btn ghost small" onClick={() => { setJobId(null); setJob(null); setError(""); }} disabled={running}
+              title="Back to the start page and your recent analyses">← New analysis</button>
+            {search}
+            <div className="segmented compact" role="radiogroup" aria-label="Quarters">
+              {QUARTER_OPTIONS.map((o) => (
+                <button key={o.n} className={quarters === o.n ? "on" : ""} onClick={() => setQuarters(o.n)} title={`${o.n} quarters (${o.hint})`}>{o.n}Q</button>
+              ))}
+            </div>
+            <label className="field">
+              <span>Tone model</span>
+              <select value={modelChoice} onChange={(e) => setModelChoice(e.target.value)}>
+                <option value="active">{modelLabel("active")}</option>
+                {installed.filter((m) => !m.active).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                <option value="dictionary">Dictionary only</option>
+              </select>
+            </label>
+            <button className="btn primary" onClick={() => run()} disabled={!picked || running || !secOk}>
+              {running ? "Analyzing…" : "Analyze"}
+            </button>
+          </div>
+          {notices}
+        </>
+      )}
 
       {running && job && (
         <div className="card progress-card">
@@ -160,10 +274,9 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels }: P
           <div className="bar"><div style={{ width: `${Math.max(3, job.progress * 100)}%` }} /></div>
         </div>
       )}
-      {error && <div className="card error"><b>Something went wrong.</b> {error}</div>}
+      {error && !launch && <div className="card error"><b>Something went wrong.</b> {error}</div>}
 
-      {!result && !running && !error && <Welcome />}
-      {result && <Dashboard r={result} tab={tab} setTab={setTab} guide={guide} onExport={exportReport} />}
+      {result && <Dashboard r={result} tab={tab} setTab={setTab} guide={guide} onExport={exportReport} openGuide={openGuide} />}
 
       {toast && (
         <div className="toast">
@@ -175,29 +288,25 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels }: P
   );
 }
 
-function Welcome() {
-  const steps = [
-    ["Read the filings", "Downloads each 10-Q / 10-K and the earnings press release from SEC EDGAR."],
-    ["Score the tone", "Rates management's language with a finance dictionary and an AI model running on your Mac."],
-    ["Compare the numbers", "Compares each quarter with the previous one and the same quarter last year."],
-    ["Rate the health", "A transparent five-pillar scorecard plus the Piotroski F-Score."],
-  ];
+function ModelOption({ id, on, title, sub, icon, pick }: { id: string; on: boolean; title: string; sub: string; icon: string; pick: (id: string) => void }) {
   return (
-    <div className="welcome">
-      <div className="hero">
-        <h1>Sentiment &amp; health from every quarterly result</h1>
-        <p>Search any company that files with the US SEC, then press Analyse. Everything runs on your Mac; every figure links back to its filing.</p>
-      </div>
-      <div className="steps">
-        {steps.map(([t, d], i) => (
-          <div key={t} className="card step"><div className="n">{i + 1}</div><b>{t}</b><span>{d}</span></div>
-        ))}
-      </div>
-    </div>
+    <button role="radio" aria-checked={on} className={on ? "model-opt on" : "model-opt"} onClick={() => pick(id)}>
+      <Icon name={icon} />
+      <div><b>{title}</b><span>{sub}</span></div>
+      <span className="radio" />
+    </button>
   );
 }
 
-function Dashboard({ r, tab, setTab, guide, onExport }: { r: Result; tab: Tab; setTab: (t: Tab) => void; guide: Guide | null; onExport: (k: "pdf" | "html" | "csv") => void }) {
+function timeAgo(ts: number): string {
+  const s = Date.now() / 1000 - ts;
+  if (s < 90) return "just now";
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  return `${Math.round(s / 86400)} d ago`;
+}
+
+function Dashboard({ r, tab, setTab, guide, onExport, openGuide }: { r: Result; tab: Tab; setTab: (t: Tab) => void; guide: Guide | null; onExport: (k: "pdf" | "html" | "csv") => void; openGuide: (k: string) => void }) {
   const c = r.charts;
   const [evQ, setEvQ] = useState(r.evidence[0]?.quarter);
   const ev = useMemo(() => r.evidence.find((e) => e.quarter === evQ) ?? r.evidence[0], [r, evQ]);
@@ -251,13 +360,13 @@ function Dashboard({ r, tab, setTab, guide, onExport }: { r: Result; tab: Tab; s
               </ul>
             </div>
             <div className="stack">
-              <ChartCard fig={c.gauge} guideKey="gauge" guide={guide} />
-              <ChartCard fig={c.pillars} guideKey="pillars" guide={guide} />
+              <ChartCard fig={c.gauge} guideKey="gauge" guide={guide} openGuide={openGuide} />
+              <ChartCard fig={c.pillars} guideKey="pillars" guide={guide} openGuide={openGuide} />
             </div>
           </div>
           <div className="grid two">
-            <ChartCard fig={c.revenue} guideKey="revenue" guide={guide} />
-            <ChartCard fig={c.tone} guideKey="tone" guide={guide} />
+            <ChartCard fig={c.revenue} guideKey="revenue" guide={guide} openGuide={openGuide} />
+            <ChartCard fig={c.tone} guideKey="tone" guide={guide} openGuide={openGuide} />
           </div>
         </>
       )}
@@ -265,11 +374,11 @@ function Dashboard({ r, tab, setTab, guide, onExport }: { r: Result; tab: Tab; s
       {tab === "Financials" && (
         <>
           <div className="grid two">
-            <ChartCard fig={c.revenue} guideKey="revenue" guide={guide} />
-            <ChartCard fig={c.growth} guideKey="growth" guide={guide} />
-            <ChartCard fig={c.margins} guideKey="margins" guide={guide} />
-            <ChartCard fig={c.cash} guideKey="cash" guide={guide} />
-            <ChartCard fig={c.balance} guideKey="balance" guide={guide} />
+            <ChartCard fig={c.revenue} guideKey="revenue" guide={guide} openGuide={openGuide} />
+            <ChartCard fig={c.growth} guideKey="growth" guide={guide} openGuide={openGuide} />
+            <ChartCard fig={c.margins} guideKey="margins" guide={guide} openGuide={openGuide} />
+            <ChartCard fig={c.cash} guideKey="cash" guide={guide} openGuide={openGuide} />
+            <ChartCard fig={c.balance} guideKey="balance" guide={guide} openGuide={openGuide} />
           </div>
           <Table rows={r.table} />
           <p className="muted small">Fourth-quarter flows are derived as full year minus nine months, as 10-K filings report annual totals.</p>
@@ -279,10 +388,10 @@ function Dashboard({ r, tab, setTab, guide, onExport }: { r: Result; tab: Tab; s
       {tab === "Sentiment" && (
         <>
           <div className="grid two">
-            <ChartCard fig={c.tone} guideKey="tone" guide={guide} />
-            <ChartCard fig={c.tone_sources} guideKey="tone_sources" guide={guide} />
-            <ChartCard fig={c.lm_mdna} guideKey="lm_mdna" guide={guide} />
-            <ChartCard fig={c.risk_length} guideKey="risk_length" guide={guide} />
+            <ChartCard fig={c.tone} guideKey="tone" guide={guide} openGuide={openGuide} />
+            <ChartCard fig={c.tone_sources} guideKey="tone_sources" guide={guide} openGuide={openGuide} />
+            <ChartCard fig={c.lm_mdna} guideKey="lm_mdna" guide={guide} openGuide={openGuide} />
+            <ChartCard fig={c.risk_length} guideKey="risk_length" guide={guide} openGuide={openGuide} />
           </div>
           <div className="card">
             <div className="card-head">
@@ -309,11 +418,11 @@ function Dashboard({ r, tab, setTab, guide, onExport }: { r: Result; tab: Tab; s
       {tab === "Health" && (
         <>
           <div className="grid three">
-            <ChartCard fig={c.gauge} guideKey="gauge" guide={guide} />
-            <ChartCard fig={c.pillars} guideKey="pillars" guide={guide} />
-            <ChartCard fig={c.fscore} guideKey="fscore" guide={guide} />
+            <ChartCard fig={c.gauge} guideKey="gauge" guide={guide} openGuide={openGuide} />
+            <ChartCard fig={c.pillars} guideKey="pillars" guide={guide} openGuide={openGuide} />
+            <ChartCard fig={c.fscore} guideKey="fscore" guide={guide} openGuide={openGuide} />
           </div>
-          <ChartCard fig={c.health} guideKey="health" guide={guide} />
+          <ChartCard fig={c.health} guideKey="health" guide={guide} openGuide={openGuide} />
           <div className="grid two">
             <div className="card">
               <h3>Scorecard metrics · {r.latest.label}</h3>

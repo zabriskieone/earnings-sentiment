@@ -3,5 +3,13 @@
   "identifier": "default",
   "description": "Main window permissions",
   "windows": ["main"],
-  "permissions": ["core:default", "opener:default", "opener:allow-open-url", "opener:allow-reveal-item-in-dir"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-toggle-maximize",
+    "opener:default",
+    "opener:allow-open-url",
+    "opener:allow-reveal-item-in-dir",
+    "dialog:allow-open"
+  ]
 }

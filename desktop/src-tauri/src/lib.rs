@@ -17,6 +17,7 @@ struct EngineInfo {
     url: String,
     token: String,
     data_dir: String,
+    default_data_dir: String,
     log_file: String,
 }
 
@@ -43,9 +44,56 @@ fn random_token() -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-fn data_dir() -> PathBuf {
-    // ~/Library/Application Support/EarningsPulse on macOS
+/// Default home of the app's data: ~/Library/Application Support/EarningsPulse on macOS.
+fn default_data_dir() -> PathBuf {
     dirs::data_dir().unwrap_or_else(std::env::temp_dir).join("EarningsPulse")
+}
+
+/// Small pointer file in the default folder that records a location the user chose.
+fn location_file() -> PathBuf {
+    default_data_dir().join("location.json")
+}
+
+/// Where filings, models and settings live: the user's chosen folder, if set and present.
+fn data_dir() -> PathBuf {
+    if let Ok(text) = std::fs::read_to_string(location_file()) {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) {
+            if let Some(p) = v.get("data_dir").and_then(|p| p.as_str()) {
+                let p = PathBuf::from(p);
+                if p.is_dir() {
+                    return p;
+                }
+            }
+        }
+    }
+    default_data_dir()
+}
+
+/// Remember a new data folder (already populated by the engine) and restart onto it.
+#[tauri::command]
+fn use_data_dir(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    let p = PathBuf::from(&path);
+    if !p.is_dir() {
+        return Err(format!("Folder not found: {path}"));
+    }
+    std::fs::create_dir_all(default_data_dir()).map_err(|e| e.to_string())?;
+    let body = if p == default_data_dir() {
+        serde_json::json!({})
+    } else {
+        serde_json::json!({ "data_dir": path })
+    };
+    std::fs::write(location_file(), body.to_string()).map_err(|e| e.to_string())?;
+    stop_engine(&app);
+    app.restart();
+}
+
+fn stop_engine(app: &tauri::AppHandle) {
+    if let Some(engine) = app.try_state::<Engine>() {
+        if let Some(mut child) = engine.child.lock().unwrap().take() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
 }
 
 /// The command that starts the engine. Release builds use the bundled binary;
@@ -69,7 +117,8 @@ fn engine_command(app: &tauri::AppHandle) -> Command {
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![engine_info])
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![engine_info, use_data_dir])
         .setup(|app| {
             let port = free_port();
             let token = random_token();
@@ -107,6 +156,7 @@ pub fn run() {
                     url: format!("http://127.0.0.1:{port}"),
                     token,
                     data_dir: dir.display().to_string(),
+                    default_data_dir: default_data_dir().display().to_string(),
                     log_file: log_path.display().to_string(),
                 },
                 child: Mutex::new(child),
@@ -119,12 +169,7 @@ pub fn run() {
     app.run(|handle, event| {
         if let RunEvent::Exit = event {
             // Never leave the engine running after the app quits
-            if let Some(engine) = handle.try_state::<Engine>() {
-                if let Some(mut child) = engine.child.lock().unwrap().take() {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                }
-            }
+            stop_engine(handle);
         }
     });
 }

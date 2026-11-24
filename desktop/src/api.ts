@@ -2,7 +2,7 @@
 // In the Mac app, Tauri tells us the engine's address and per-launch token.
 // For development in a normal browser, pass ?engine=http://127.0.0.1:8765&token=...
 
-export type Engine = { url: string; token: string; data_dir?: string; log_file?: string };
+export type Engine = { url: string; token: string; data_dir?: string; default_data_dir?: string; log_file?: string };
 
 export const isTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -84,6 +84,21 @@ export async function openExternal(url: string) {
   }
 }
 
+/** Native folder picker (desktop app only). Returns null if cancelled. */
+export async function pickFolder(title: string): Promise<string | null> {
+  if (!isTauri()) return window.prompt(title + " (full path)") || null;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const r = await open({ directory: true, multiple: false, title });
+  return typeof r === "string" ? r : null;
+}
+
+/** Switch the app to a data folder (already populated by the engine) and restart. */
+export async function useDataDir(path: string) {
+  if (!isTauri()) return;
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("use_data_dir", { path });
+}
+
 export async function revealFile(path: string) {
   if (isTauri()) {
     const { revealItemInDir } = await import("@tauri-apps/plugin-opener");
@@ -95,6 +110,8 @@ export async function revealFile(path: string) {
 export type Settings = {
   sec_user_agent: string;
   sec_user_agent_valid: boolean;
+  sec_name: string;
+  sec_email: string;
   theme: "light" | "dark" | "system";
   active_model: string | null;
   data_dir: string;
@@ -171,3 +188,10 @@ export type Guide = {
   glossary: Record<string, string>;
   kpi_help: Record<string, string>;
 };
+
+export type HistoryItem = {
+  ticker: string; name: string; quarters: number; model_id: string | null; model_name: string; latest: string;
+  verdict: string; health: number | null; tone: number | null; analysed_at: number;
+};
+
+export type Storage = { data_dir: string; sizes: { filings: number; models: number; summaries: number; logs: number } };

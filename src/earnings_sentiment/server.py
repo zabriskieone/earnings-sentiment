@@ -17,6 +17,8 @@ import io
 import json
 import math
 import os
+import re
+import shutil
 import secrets
 import threading
 import time
@@ -80,7 +82,20 @@ def sec_user_agent() -> str:
 
 class SettingsIn(BaseModel):
     sec_user_agent: str | None = None
+    sec_name: str | None = None
+    sec_email: str | None = None
     theme: str | None = None
+
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def split_identity(ua: str) -> tuple[str, str]:
+    """'Jane Doe jane@example.com' -> ('Jane Doe', 'jane@example.com')."""
+    parts = ua.split()
+    email = next((p for p in reversed(parts) if "@" in p), "")
+    name = " ".join(p for p in parts if p != email)
+    return name, email
 
 
 @app.get("/api/health")
@@ -92,7 +107,9 @@ def health() -> dict:
 def get_settings() -> dict:
     s = models.load_settings()
     ua = sec_user_agent()
+    name, email = split_identity(ua)
     return {"sec_user_agent": ua, "sec_user_agent_valid": config.valid_user_agent(ua),
+            "sec_name": name, "sec_email": email,
             "theme": s.get("theme", "system"), "active_model": models.active_model(),
             "data_dir": str(config.DATA_DIR)}
 
@@ -100,7 +117,15 @@ def get_settings() -> dict:
 @app.put("/api/settings", dependencies=auth)
 def put_settings(body: SettingsIn) -> dict:
     changes = {}
-    if body.sec_user_agent is not None:
+    if body.sec_name is not None or body.sec_email is not None:
+        name = " ".join((body.sec_name or "").split())
+        email = (body.sec_email or "").strip()
+        if not name:
+            raise HTTPException(400, "Please enter your name.")
+        if not EMAIL_RE.match(email):
+            raise HTTPException(400, "Please enter a valid e-mail address, e.g. jane@example.com.")
+        changes["sec_user_agent"] = f"{name} {email}"
+    elif body.sec_user_agent is not None:
         ua = body.sec_user_agent.strip()
         if ua and not config.valid_user_agent(ua):
             raise HTTPException(400, "Enter your name and e-mail, e.g. 'Jane Doe jane@example.com'")
@@ -178,6 +203,7 @@ def _run_job(job: Job) -> None:
                                use_finbert=(mid != "dictionary"), model_id=None if mid in (None, "dictionary") else mid,
                                user_agent=sec_user_agent(), progress=progress)
         job.status, job.progress, job.message = "done", 1.0, "Done"
+        _record_history(job)
     except EdgarError as exc:
         job.status, job.error = "error", str(exc)
     except Exception as exc:  # report, don't crash the engine
@@ -304,6 +330,129 @@ def export(job_id: str, kind: str = Query("pdf", pattern="^(pdf|html|csv)$")) ->
         n += 1
     path.write_bytes(data)
     return {"path": str(path)}
+
+
+# --------------------------------------------------------------------------- recent analyses
+def _history_path():
+    return config.DATA_DIR / "history.json"
+
+
+def load_history() -> list[dict]:
+    try:
+        return json.loads(_history_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+
+
+def _record_history(job: "Job") -> None:
+    a = job.analysis
+    if not a:
+        return
+    try:
+        st = a.sentiment_table()
+        tone = st["tone_index"].iloc[-1] if "tone_index" in st else None
+        entry = clean({
+            "ticker": a.company.ticker, "name": a.company.name, "quarters": job.req.quarters,
+            "model_id": job.req.model_id, "model_name": a.model_name, "latest": a.latest.fq.label,
+            "verdict": verdict(build_insights(a))[0], "health": (a.latest.health or {}).get("overall"),
+            "tone": float(tone) if tone is not None else None, "analysed_at": time.time(),
+        })
+        hist = [h for h in load_history() if not (h["ticker"] == entry["ticker"] and h.get("model_id") == entry["model_id"])]
+        hist.insert(0, entry)
+        _history_path().write_text(json.dumps(hist[:24], indent=1), encoding="utf-8")
+    except Exception:
+        pass  # history is a convenience; never fail an analysis over it
+
+
+@app.get("/api/history", dependencies=auth)
+def history() -> list[dict]:
+    return load_history()
+
+
+@app.delete("/api/history", dependencies=auth)
+def clear_history() -> dict:
+    _history_path().unlink(missing_ok=True)
+    return {"ok": True}
+
+
+# --------------------------------------------------------------------------- storage
+MOVABLE = ("cache", "models", "summaries", "settings.json", "history.json")
+
+
+def _size(path) -> int:
+    from pathlib import Path
+
+    p = Path(path)
+    if p.is_file():
+        return p.stat().st_size
+    return sum(f.stat().st_size for f in p.rglob("*") if f.is_file()) if p.exists() else 0
+
+
+@app.get("/api/storage", dependencies=auth)
+def storage() -> dict:
+    d = config.DATA_DIR
+    return {"data_dir": str(d), "sizes": {
+        "filings": _size(d / "cache"), "models": _size(d / "models"),
+        "summaries": _size(d / "summaries"), "logs": _size(d / "logs"),
+    }}
+
+
+@app.post("/api/storage/clear-cache", dependencies=auth)
+def clear_cache() -> dict:
+    """Delete downloaded filings (they are fetched again when needed). Models are kept."""
+    shutil.rmtree(config.DATA_DIR / "cache", ignore_errors=True)
+    global _companies
+    _companies = []
+    return storage()
+
+
+class MoveIn(BaseModel):
+    target: str
+    remove_old: bool = True
+
+
+@app.post("/api/storage/move", dependencies=auth)
+def move_storage(body: MoveIn) -> dict:
+    """Copy filings, models, summaries and settings into <chosen folder>/EarningsPulse.
+
+    The desktop app then records the new location and restarts so the engine uses it.
+    Only EarningsPulse's own files are ever copied or removed.
+    """
+    from pathlib import Path
+
+    chosen = Path(body.target).expanduser()
+    if not chosen.is_dir():
+        raise HTTPException(400, "That folder does not exist.")
+    dest = chosen if chosen.name == "EarningsPulse" else chosen / "EarningsPulse"
+    src = config.DATA_DIR
+    if dest.resolve() == src.resolve():
+        return {"data_dir": str(dest), "moved": False}
+    if src.resolve() in dest.resolve().parents:
+        raise HTTPException(400, "Choose a folder outside the current data folder.")
+    try:
+        dest.mkdir(parents=True, exist_ok=True)
+        probe = dest / ".write-test"
+        probe.write_text("ok")
+        probe.unlink()
+    except OSError:
+        raise HTTPException(400, "EarningsPulse cannot write to that folder. Choose another one.")
+    needed = sum(_size(src / n) for n in MOVABLE)
+    if shutil.disk_usage(dest).free < needed * 1.1:
+        raise HTTPException(400, f"Not enough free space there ({needed / 1e9:.1f} GB needed).")
+    for name in MOVABLE:
+        s, t = src / name, dest / name
+        if s.is_dir():
+            shutil.copytree(s, t, dirs_exist_ok=True)
+        elif s.is_file():
+            shutil.copy2(s, t)
+    if body.remove_old:
+        for name in MOVABLE:
+            p = src / name
+            if p.is_dir():
+                shutil.rmtree(p, ignore_errors=True)
+            elif p.is_file():
+                p.unlink(missing_ok=True)
+    return {"data_dir": str(dest), "moved": True}
 
 
 # --------------------------------------------------------------------------- models
