@@ -1,0 +1,41 @@
+name: publish-models
+# Rebuilds the ONNX sentiment models from their original Hugging Face repos and
+# attaches them to a GitHub release that the desktop app downloads from.
+# Trigger: push a tag like models-v1 (or run manually from the Actions tab).
+on:
+  push:
+    tags: ["models-v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish to"
+        default: "models-v1"
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      HF_HUB_DISABLE_XET: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install export tools (CPU PyTorch)
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers onnx onnxruntime tokenizers huggingface_hub
+      - name: Export and verify models
+        run: python tools/export_models.py --out dist/models
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Sentiment models for the EarningsPulse desktop app, exported to ONNX at full precision by tools/export_models.py from their original Hugging Face repositories. Each was checked to match the original model exactly (see models.json). Models remain under their authors' licenses."
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Sentiment models ($TAG)" --notes "$notes" --prerelease
+          gh release upload "$TAG" dist/models/*.zip dist/models/models.json --clobber
