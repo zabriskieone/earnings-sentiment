@@ -4,12 +4,13 @@
 
 [![tests](https://github.com/zabriskieone/earnings-sentiment/actions/workflows/tests.yml/badge.svg)](https://github.com/zabriskieone/earnings-sentiment/actions/workflows/tests.yml)
 
-EarningsPulse is an interactive dashboard that reads every quarterly result a company
-files with the US SEC and shows:
+EarningsPulse is a free Mac app (plus a browser version for Linux and Windows) that reads
+every quarterly result a company files with the US SEC and shows:
 
 * **Management tone**: is the language in the MD&A and the earnings press release
   getting more positive or more cautious? Scored with the Loughran-McDonald finance
-  dictionary and (optionally) the FinBERT language model.
+  dictionary and an AI model of your choice (FinBERT, FinBERT-tone or DistilRoBERTa),
+  all running on your own computer.
 * **Financial trends**: revenue, EPS, margins, cash flow and balance sheet, each
   compared with the **previous quarter** and the **same quarter last year**.
 * **Financial health**: a transparent 0–100 scorecard plus the Piotroski F-Score.
@@ -21,7 +22,7 @@ files with the US SEC and shows:
 Search **any company that files 10-Q/10-K reports with the SEC**, then press
 *Analyse*. Every figure links back to the filing it came from.
 
-![Dashboard overview](docs/images/dashboard-overview.png)
+![EarningsPulse Mac app](docs/images/app-overview-dark.png)
 
 > **Disclaimer**: a hobby research tool. Automated text and ratio analysis of
 > public filings is not investment advice. Verify figures against the linked
@@ -29,7 +30,37 @@ Search **any company that files 10-Q/10-K reports with the SEC**, then press
 
 ---
 
-## Quick start
+## Install the Mac app
+
+Open **Terminal** and paste:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zabriskieone/earnings-sentiment/main/install-app.sh | bash
+```
+
+It downloads the latest release for your Mac (Apple silicon or Intel), puts **EarningsPulse** in your
+Applications folder and opens it. Run the same line again to update; add `--uninstall` after `bash -s --`
+to remove it.
+
+Prefer a download? Get the `.dmg` from the [latest release](https://github.com/zabriskieone/earnings-sentiment/releases/latest)
+(**arm64** = Apple silicon, **x64** = Intel) and drag the app to Applications. The app is not yet signed by Apple, so the
+first time it is blocked: open **System Settings → Privacy & Security** and click **Open Anyway**. The Terminal install
+above doesn't need this step.
+
+**First launch:** enter your name and e-mail (the SEC requires it), then open **Models** to download an AI tone model:
+
+![Models screen](docs/images/app-models.png)
+
+| Model | Download | Best for |
+|---|---|---|
+| [FinBERT](https://huggingface.co/ProsusAI/finbert) | 406 MB | A reliable default for MD&A and press releases |
+| [FinBERT-tone](https://huggingface.co/yiyanghkust/finbert-tone) | 408 MB | The formal language of 10-Q and 10-K reports |
+| [DistilRoBERTa Fast](https://huggingface.co/mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis) | 306 MB | Quick scans and Intel Macs (about 2x faster) |
+
+The models are converted to ONNX by [`tools/export_models.py`](tools/export_models.py) and checked to give exactly the same
+results as the originals; they run on your Mac's CPU with no data sent anywhere.
+
+## Browser version (Mac, Linux, Windows)
 
 ### Mac or Linux: one command
 
@@ -175,7 +206,11 @@ Use the ☀️/🌙 icon at the top right to switch between light and dark mode.
 ## Project layout
 
 ```
-install.sh / install.ps1       one-line installers (Mac/Linux, Windows)
+install-app.sh                 one-line installer for the Mac app
+desktop/                       Mac app: Tauri shell (src-tauri/) + React interface (src/)
+packaging/engine.spec          PyInstaller recipe that bundles the Python engine into the app
+tools/export_models.py         builds the ONNX sentiment models published on GitHub Releases
+install.sh / install.ps1       one-line installers for the browser version (Mac/Linux, Windows)
 start.sh / start.bat           launchers (also "Start EarningsPulse.command" for macOS Finder)
 app.py                         Streamlit dashboard
 src/earnings_sentiment/
@@ -191,6 +226,8 @@ src/earnings_sentiment/
   explain.py                   "how to read" guides and glossary
   logos.py                     company logos with monogram fallback
   theme.py                     EarningsPulse look, light/dark palettes
+  models.py                    model catalogue, downloads (checksummed), ONNX inference
+  server.py                    local engine API used by the Mac app
   report.py                    HTML + PDF reports
   cli.py                       `snapshot` command
 tests/                         offline unit tests (pytest)
