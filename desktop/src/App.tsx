@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { alertText, api, notify, waitForEngine, type Alert, type Guide, type Settings, type WatchResponse } from "./api";
 import Analyze, { type OpenRequest } from "./Analyze";
 import PortfolioPage from "./Portfolio";
+import ComparePage from "./Compare";
 import Models from "./Models";
 import { GuidePage, SettingsPage } from "./Pages";
 import { AppMark, Icon } from "./components";
 
-type Page = "analyze" | "portfolio" | "models" | "guide" | "settings";
+type Page = "analyze" | "portfolio" | "compare" | "models" | "guide" | "settings";
 
 const NAV: { id: Page; label: string; icon: string }[] = [
   { id: "analyze", label: "Analyze", icon: "analyze" },
@@ -91,6 +92,9 @@ export default function App() {
     setOpenReq({ company: { ticker: c.ticker, name: c.name, cik: "" }, jobId: jobId ?? undefined, at: Date.now() });
     setPage("analyze");
   };
+  const [compareSet, setCompareSet] = useState<string[]>([]);
+  const [compareFrom, setCompareFrom] = useState<Page>("portfolio");
+  const startCompare = (tickers: string[]) => { setCompareFrom(page); setCompareSet(tickers); setPage("compare"); };
   const unread = alerts.filter((a) => !a.read).length;
 
   const changeTheme = async (t: Settings["theme"]) => {
@@ -119,7 +123,7 @@ export default function App() {
         <div className="brand" data-tauri-drag-region><AppMark size={34} /><div data-tauri-drag-region><b data-tauri-drag-region>EarningsPulse</b><span data-tauri-drag-region>Sentiment &amp; health from every quarterly result</span></div></div>
         <nav>
           {NAV.map((n) => (
-            <button key={n.id} className={page === n.id ? "nav on" : "nav"} onClick={() => setPage(n.id)}>
+            <button key={n.id} className={page === n.id || (page === "compare" && n.id === "portfolio") ? "nav on" : "nav"} onClick={() => setPage(n.id)}>
               <Icon name={n.icon} /> {n.label}
               {n.id === "portfolio" && unread > 0 && <span className="count" aria-label={`${unread} new alerts`}>{unread}</span>}
               {n.id === "settings" && settings && !settings.sec_user_agent_valid && <span className="dot-alert" />}
@@ -138,9 +142,11 @@ export default function App() {
         <div className="drag-region top" data-tauri-drag-region />
         {page === "analyze" && <Analyze theme={theme} guide={guide} secOk={!!settings?.sec_user_agent_valid}
           goSettings={() => setPage("settings")} goModels={() => setPage("models")} openGuide={openGuide}
-          openReq={openReq} watched={watched} toggleWatch={toggleWatch} />}
+          openReq={openReq} watched={watched} toggleWatch={toggleWatch} portfolio={watch?.items ?? []} startCompare={startCompare} />}
+        {page === "compare" && <ComparePage tickers={compareSet} theme={theme} guide={guide} openGuide={openGuide}
+          back={() => setPage(compareFrom)} openCompany={openCompany} />}
         {page === "portfolio" && <PortfolioPage watch={watch} alerts={alerts} secOk={!!settings?.sec_user_agent_valid} reload={loadWatch}
-          open={openCompany} goSettings={() => setPage("settings")} />}
+          open={openCompany} goSettings={() => setPage("settings")} startCompare={startCompare} />}
         {page === "models" && <Models />}
         {page === "guide" && <GuidePage guide={guide} target={guideTarget} clearTarget={clearGuideTarget} />}
         {page === "settings" && <SettingsPage settings={settings} onSaved={(s) => setSettings(s)} theme={themePref} setTheme={changeTheme}

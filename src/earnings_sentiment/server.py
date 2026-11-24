@@ -32,7 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
-from . import __version__, changes, charts, config, explain, logos, models, watchlist
+from . import __version__, changes, charts, compare, config, explain, logos, models, watchlist
 from .analysis import SECTIONS, Analysis, analyze
 from .edgar import FACTS_URL, EdgarClient, EdgarError
 from .health import METRIC_LABELS
@@ -738,6 +738,97 @@ def read_alerts(body: ReadIn) -> dict:
 def clear_alerts() -> dict:
     watchlist.clear_alerts()
     return {"ok": True}
+
+
+# --------------------------------------------------------------------------- compare companies
+class CompareIn(BaseModel):
+    tickers: list[str]
+
+
+class CompareJob:
+    def __init__(self, tickers: list[str]):
+        self.id = uuid.uuid4().hex[:12]
+        self.tickers = tickers
+        self.status, self.progress, self.message, self.error = "running", 0.0, "Starting", ""
+        self.job_ids: list[str] = []
+
+
+_compares: "OrderedDict[str, CompareJob]" = OrderedDict()
+
+
+def _latest_done_job(ticker: str) -> Job | None:
+    done = [j for j in _jobs.values() if j.status == "done" and j.analysis and j.analysis.company.ticker == ticker]
+    return max(done, key=lambda j: j.started) if done else None
+
+
+def _run_compare(cj: CompareJob) -> None:
+    try:
+        for n, t in enumerate(cj.tickers):
+            job = _latest_done_job(t)
+            if job is None:
+                prev = next((h for h in load_history() if h["ticker"] == t), None)
+                job = Job(AnalysisIn(ticker=t, quarters=(prev or {}).get("quarters", 8),
+                                     model_id=(prev or {}).get("model_id")))
+                with _jobs_lock:
+                    _jobs[job.id] = job
+                cj.message = f"Analysing {t}"
+                base = n / len(cj.tickers)
+                # mirror the analysis progress into the comparison's progress
+                stop = threading.Event()
+
+                def mirror(j=job, b=base):
+                    while not stop.wait(0.3):
+                        cj.progress = b + j.progress / len(cj.tickers)
+                threading.Thread(target=mirror, daemon=True).start()
+                _run_job(job)
+                stop.set()
+                if job.status != "done":
+                    raise EdgarError(f"{t}: {job.error}")
+            cj.job_ids.append(job.id)
+            cj.progress = (n + 1) / len(cj.tickers)
+        cj.status, cj.message = "done", "Done"
+    except Exception as exc:
+        cj.status, cj.error = "error", str(exc)
+
+
+@app.post("/api/compare", dependencies=auth)
+def start_compare(body: CompareIn) -> dict:
+    tickers = list(dict.fromkeys(t.strip().upper() for t in body.tickers if t.strip()))
+    if not 2 <= len(tickers) <= 3:
+        raise HTTPException(400, "Pick two or three companies to compare.")
+    if not config.valid_user_agent(sec_user_agent()):
+        raise HTTPException(400, "Add your name and e-mail in Settings first (the SEC requires it).")
+    cj = CompareJob(tickers)
+    _compares[cj.id] = cj
+    while len(_compares) > 8:
+        _compares.popitem(last=False)
+    threading.Thread(target=_run_compare, args=(cj,), daemon=True, name=f"compare-{cj.id}").start()
+    return {"compare_id": cj.id}
+
+
+def _compare_job(cid: str) -> CompareJob:
+    cj = _compares.get(cid)
+    if not cj:
+        raise HTTPException(404, "Comparison not found (the app may have restarted)")
+    return cj
+
+
+@app.get("/api/compare/{cid}", dependencies=auth)
+def compare_status(cid: str) -> dict:
+    cj = _compare_job(cid)
+    return {"compare_id": cj.id, "tickers": cj.tickers, "status": cj.status, "progress": cj.progress,
+            "message": cj.message, "error": cj.error}
+
+
+@app.get("/api/compare/{cid}/result", dependencies=auth)
+def compare_result(cid: str, theme: str = "light") -> dict:
+    cj = _compare_job(cid)
+    if cj.status != "done":
+        raise HTTPException(409, "Comparison is not finished")
+    analyses = [_done(j) for j in cj.job_ids]
+    out = compare.build(analyses, "dark" if theme == "dark" else "light", [snapshot(a) for a in analyses])
+    out["job_ids"] = dict(zip(cj.tickers, cj.job_ids))
+    return clean(out)
 
 
 # --------------------------------------------------------------------------- entry point

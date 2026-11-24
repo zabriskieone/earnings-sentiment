@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, openExternal, revealFile, isTauri, getEngine, type Company, type Guide, type HistoryItem, type JobStatus, type ModelsResponse, type Result } from "./api";
+import { api, openExternal, revealFile, isTauri, getEngine, type Company, type Guide, type HistoryItem, type WatchItem, type JobStatus, type ModelsResponse, type Result } from "./api";
 import { ChartCard, CompanyLogo, Icon, Sparkline } from "./components";
 import ChangesTab from "./Changes";
 
@@ -9,6 +9,7 @@ type Props = {
   theme: "light" | "dark"; guide: Guide | null; secOk: boolean;
   goSettings: () => void; goModels: () => void; openGuide: (key: string) => void;
   openReq: OpenRequest | null; watched: Set<string>; toggleWatch: (ticker: string) => Promise<void>;
+  portfolio: WatchItem[]; startCompare: (tickers: string[]) => void;
 };
 
 const QUARTER_OPTIONS = [
@@ -18,7 +19,7 @@ const QUARTER_OPTIONS = [
 const TABS = ["Overview", "Financials", "Sentiment", "Changes", "Health", "Sources"] as const;
 type Tab = (typeof TABS)[number];
 
-export default function Analyze({ theme, guide, secOk, goSettings, goModels, openGuide, openReq, watched, toggleWatch }: Props) {
+export default function Analyze({ theme, guide, secOk, goSettings, goModels, openGuide, openReq, watched, toggleWatch, portfolio, startCompare }: Props) {
   const [query, setQuery] = useState("AAPL");
   const [picked, setPicked] = useState<Company | null>({ ticker: "AAPL", name: "Apple Inc.", cik: "0000320193" });
   const [matches, setMatches] = useState<Company[]>([]);
@@ -294,7 +295,8 @@ export default function Analyze({ theme, guide, secOk, goSettings, goModels, ope
       )}
       {error && !launch && <div className="card error"><b>Something went wrong.</b> {error}</div>}
 
-      {result && jobId && <Dashboard r={result} jobId={jobId} watched={watched.has(result.company.ticker)} toggleWatch={toggleWatch} tab={tab} setTab={setTab} guide={guide} onExport={exportReport} openGuide={openGuide} />}
+      {result && jobId && <Dashboard r={result} jobId={jobId} watched={watched.has(result.company.ticker)} toggleWatch={toggleWatch}
+        portfolio={portfolio} startCompare={startCompare} tab={tab} setTab={setTab} guide={guide} onExport={exportReport} openGuide={openGuide} />}
 
       {toast && (
         <div className="toast">
@@ -324,17 +326,20 @@ function timeAgo(ts: number): string {
   return `${Math.round(s / 86400)} d ago`;
 }
 
-function Dashboard({ r, jobId, watched, toggleWatch, tab, setTab, guide, onExport, openGuide }: { r: Result; jobId: string; watched: boolean; toggleWatch: (t: string) => Promise<void>; tab: Tab; setTab: (t: Tab) => void; guide: Guide | null; onExport: (k: "pdf" | "html" | "csv") => void; openGuide: (k: string) => void }) {
+function Dashboard({ r, jobId, watched, toggleWatch, portfolio, startCompare, tab, setTab, guide, onExport, openGuide }: { r: Result; jobId: string; watched: boolean; toggleWatch: (t: string) => Promise<void>; portfolio: WatchItem[]; startCompare: (t: string[]) => void; tab: Tab; setTab: (t: Tab) => void; guide: Guide | null; onExport: (k: "pdf" | "html" | "csv") => void; openGuide: (k: string) => void }) {
   const c = r.charts;
   const [evQ, setEvQ] = useState(r.evidence[0]?.quarter);
   const ev = useMemo(() => r.evidence.find((e) => e.quarter === evQ) ?? r.evidence[0], [r, evQ]);
   return (
     <>
       <div className="hero company">
+        <div className="hero-actions">
+        <ComparePicker me={r.company.ticker} portfolio={portfolio} start={startCompare} />
         <button className={watched ? "btn watch on" : "btn watch"} onClick={() => toggleWatch(r.company.ticker).catch(() => {})}
           aria-pressed={watched} title={watched ? "Remove from your portfolio" : "Add to your portfolio: get an alert when it files new results"}>
           <Icon name={watched ? "check" : "plus"} size={15} /> {watched ? "In portfolio" : "Add to portfolio"}
         </button>
+        </div>
         <CompanyLogo ticker={r.company.ticker} size={64} />
         <div>
           <h1>{r.company.name} <span className="ticker">{r.company.ticker}</span></h1>
@@ -476,6 +481,52 @@ function Dashboard({ r, jobId, watched, toggleWatch, tab, setTab, guide, onExpor
         </div>
       )}
     </>
+  );
+}
+
+function ComparePicker({ me, portfolio, start }: { me: string; portfolio: WatchItem[]; start: (t: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+  const btn = useRef<HTMLButtonElement>(null);
+  const [sel, setSel] = useState<string[]>([]);
+  // the hero clips its overflow, so the popover is placed in the window under the button
+  const toggleOpen = () => {
+    const r = btn.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+    setOpen((o) => !o);
+  };
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const main = document.querySelector(".main");
+    main?.addEventListener("scroll", close, { passive: true });
+    window.addEventListener("resize", close);
+    return () => { main?.removeEventListener("scroll", close); window.removeEventListener("resize", close); };
+  }, [open]);
+  const [typed, setTyped] = useState("");
+  const others = portfolio.filter((p) => p.ticker !== me);
+  const toggle = (t: string) => setSel((s) => (s.includes(t) ? s.filter((x) => x !== t) : s.length >= 2 ? s : [...s, t]));
+  const go = () => {
+    const extra = typed.split(/[\s,]+/).map((t) => t.trim().toUpperCase().replace(/^\$/, "")).filter(Boolean);
+    const list = [me, ...sel, ...extra].filter((t, i, a) => a.indexOf(t) === i).slice(0, 3);
+    if (list.length >= 2) { setOpen(false); start(list); }
+  };
+  return (
+    <div className="picker-wrap">
+      <button ref={btn} className="btn watch" onClick={toggleOpen} aria-expanded={open}><Icon name="analyze" size={15} /> Compare with…</button>
+      {open && (
+        <div className="picker" style={{ top: pos.top, right: pos.right }} role="dialog" aria-label={`Compare ${me} with`}>
+          <p className="small muted">Compare {me} with up to two companies.</p>
+          {others.length > 0 && <div className="picker-chips">{others.map((p) => (
+            <button key={p.ticker} className={sel.includes(p.ticker) ? "chip-btn on" : "chip-btn"} onClick={() => toggle(p.ticker)}
+              aria-pressed={sel.includes(p.ticker)}>{p.ticker}</button>))}</div>}
+          <input className="input" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={others.length ? "or type tickers, e.g. GOOGL" : "Tickers, e.g. MSFT, GOOGL"}
+            onKeyDown={(e) => e.key === "Enter" && go()} aria-label="Other tickers" />
+          <div className="row gap"><button className="btn primary" onClick={go} disabled={!sel.length && !typed.trim()}>Compare</button>
+            <button className="btn ghost" onClick={() => setOpen(false)}>Cancel</button></div>
+        </div>
+      )}
+    </div>
   );
 }
 

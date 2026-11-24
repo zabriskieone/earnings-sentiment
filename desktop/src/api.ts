@@ -259,3 +259,15 @@ export function alertText(a: Alert): string {
     ? `${a.name} released quarterly results (8-K, ${a.filed}).`
     : `${a.name} filed its ${a.form === "10-K" ? "annual report (10-K)" : "quarterly report (10-Q)"} on ${a.filed}.`;
 }
+
+// ---- compare
+export type CompareCompany = {
+  ticker: string; name: string; latest: string; calendar_quarter: string; form: string; filed: string;
+  verdict: string | null; health: number | null; model_name: string; fiscal_year_end: string;
+};
+export type CompareResult = {
+  companies: CompareCompany[];
+  charts: Record<string, { data: unknown[]; layout: Record<string, unknown> }>;
+  table: { key: string; label: string; higher_is_better: boolean; values: { value: number | null; text: string; best: boolean }[] }[];
+  notes: string[]; job_ids: Record<string, string>;
+};

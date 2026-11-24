@@ -7,6 +7,7 @@ import { CompanyLogo, Icon } from "./components";
 type Props = {
   watch: WatchResponse | null; alerts: Alert[]; secOk: boolean; reload: () => Promise<void>;
   open: (c: { ticker: string; name: string }, jobId?: string | null) => void; goSettings: () => void;
+  startCompare: (tickers: string[]) => void;
 };
 
 type SortKey = "ticker" | "verdict" | "health" | "health_change" | "tone" | "revenue_yoy" | "gross_margin" | "fscore" | "filed";
@@ -42,7 +43,7 @@ const pct = (v: number | null, signed = true) => (v == null ? "–" : `${signed 
 const signed = (v: number | null, d = 2) => (v == null ? "" : `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(d)}`);
 const isStale = (i: WatchItem) => !i.analysed_at || (i.last_filing?.kind === "report" && !!i.period_end && i.last_filing.period != null && i.last_filing.period > i.period_end);
 
-export default function PortfolioPage({ watch, alerts, secOk, reload, open, goSettings }: Props) {
+export default function PortfolioPage({ watch, alerts, secOk, reload, open, goSettings, startCompare }: Props) {
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<Company[]>([]);
   const [paste, setPaste] = useState<string | null>(null);
@@ -50,6 +51,8 @@ export default function PortfolioPage({ watch, alerts, secOk, reload, open, goSe
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
+  const togglePick = (t: string) => setPicked((p) => (p.includes(t) ? p.filter((x) => x !== t) : p.length >= 3 ? p : [...p, t]));
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "health", dir: -1 });
   const timer = useRef<number>();
 
@@ -219,13 +222,18 @@ export default function PortfolioPage({ watch, alerts, secOk, reload, open, goSe
         ) : (
           <div className="table-scroll">
             <table className="table pf-table">
-              <thead><tr>{COLS.map(th)}<th aria-label="Actions" /></tr></thead>
+              <thead><tr><th className="pick" aria-label="Select to compare" />{COLS.map(th)}<th aria-label="Actions" /></tr></thead>
               <tbody>
                 {sorted.map((i) => {
                   const st = i.batch?.status;
                   const r = vRank(i.verdict);
                   return (
-                    <tr key={i.ticker} className={unreadBy.has(i.ticker) ? "fresh" : ""}>
+                    <tr key={i.ticker} className={`${unreadBy.has(i.ticker) ? "fresh" : ""}${picked.includes(i.ticker) ? " picked" : ""}`}>
+                      <td className="pick">
+                        <input type="checkbox" checked={picked.includes(i.ticker)} onChange={() => togglePick(i.ticker)}
+                          disabled={!picked.includes(i.ticker) && picked.length >= 3} aria-label={`Select ${i.ticker} to compare`}
+                          title={!picked.includes(i.ticker) && picked.length >= 3 ? "Compare up to three companies" : "Select to compare"} />
+                      </td>
                       <td>
                         <button className="pf-co" onClick={() => open(i, i.batch?.status === "done" ? i.batch.job_id : null)} disabled={!secOk} title={`Open ${i.name}`}>
                           <CompanyLogo ticker={i.ticker} size={32} />
@@ -262,7 +270,14 @@ export default function PortfolioPage({ watch, alerts, secOk, reload, open, goSe
             </table>
           </div>
         )}
-        {items.length > 0 && <p className="muted small foot">Click a company to open its full dashboard. Health and tone changes compare with the same quarter a year earlier.
+        {picked.length > 0 && (
+          <div className="compare-bar" role="region" aria-label="Compare selection">
+            <span>{picked.map((t) => <span key={t} className="chip-sel">{t}<button aria-label={`Unselect ${t}`} onClick={() => togglePick(t)}>×</button></span>)}</span>
+            <span className="muted small">{picked.length < 2 ? "Select one or two more to compare" : picked.length === 3 ? "Maximum of three" : "Add one more, or compare now"}</span>
+            <button className="btn primary" disabled={picked.length < 2} onClick={() => startCompare(picked)}>Compare {picked.length > 1 ? picked.length : ""}</button>
+          </div>
+        )}
+        {items.length > 0 && <p className="muted small foot">Tick two or three companies to compare them side by side. Click a company to open its full dashboard. Health and tone changes compare with the same quarter a year earlier.
           Each company keeps the quarters and model of its last analysis.</p>}
       </div>
 

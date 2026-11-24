@@ -181,3 +181,10 @@ def test_portfolio_uses_each_companys_newest_analysis(client, tmp_path):
     body = client.get("/api/watchlist", headers=H).json()
     assert body["items"][0]["health"] == 81 and body["items"][0]["revenue_yoy"] == 0.12
     assert body["last_run"] == 1000 and "seen" not in body["items"][0]
+
+
+def test_compare_needs_two_or_three_companies(client, monkeypatch):
+    monkeypatch.setattr(server, "sec_user_agent", lambda: "Jane Doe jane@example.com")
+    assert client.post("/api/compare", json={"tickers": ["AAPL"]}, headers=H).status_code == 400
+    assert client.post("/api/compare", json={"tickers": ["A", "B", "C", "D"]}, headers=H).status_code == 400
+    assert client.get("/api/compare/nope", headers=H).status_code == 404
