@@ -34,7 +34,7 @@ if not exist ".venv\.finbert" (
     set "FB=%EARNINGSPULSE_FINBERT%"
   ) else (
     echo   FinBERT is an AI model that reads every sentence for tone ^(more accurate^).
-    echo   It adds about 2 GB of downloads, plus a 440 MB model the first time you use it.
+    echo   It downloads about 600 MB once ^(PyTorch ~130 MB + the model 440 MB^).
     set /p "FB=  Include FinBERT? [Y/n] "
   )
   if /i "!FB:~0,1!"=="n" (echo no> ".venv\.finbert") else (echo yes> ".venv\.finbert")
@@ -42,18 +42,29 @@ if not exist ".venv\.finbert" (
 set /p FINBERT=<".venv\.finbert"
 
 if not exist ".venv\.installed" (
-  echo   Installing packages ^(first run only; this can take a few minutes^) ...
+  echo.
+  echo   [2/5] Installing app packages ^(~150 MB, usually 1-3 minutes^) ...
   "%PYV%" -m pip install --quiet --upgrade pip >nul 2>nul
-  "%PYV%" -m pip install --quiet --disable-pip-version-check -r requirements.txt || (echo   Package install failed. & pause & exit /b 1)
+  "%PYV%" -m pip install --disable-pip-version-check -r requirements.txt || (echo   Package install failed. & pause & exit /b 1)
   if /i "!FINBERT!"=="yes" (
-    echo   Installing FinBERT support ^(PyTorch + transformers^) ...
-    "%PYV%" -m pip install --quiet --disable-pip-version-check torch --index-url https://download.pytorch.org/whl/cpu
-    "%PYV%" -m pip install --quiet --disable-pip-version-check -r requirements-finbert.txt || echo   FinBERT could not be installed; dictionary scoring will be used.
+    echo.
+    echo   Installing PyTorch + transformers for FinBERT ^(~150 MB^) ...
+    "%PYV%" -m pip install --disable-pip-version-check torch --index-url https://download.pytorch.org/whl/cpu || "%PYV%" -m pip install --disable-pip-version-check torch
+    "%PYV%" -m pip install --disable-pip-version-check -r requirements-finbert.txt || echo   FinBERT could not be installed; dictionary scoring will be used.
   )
   echo done> ".venv\.installed"
 )
 
-REM ---------------------------------------------------------------- 3. SEC identity
+REM ---------------------------------------------------------------- 3. FinBERT model (once)
+if /i "!FINBERT!"=="yes" if not exist ".venv\.finbert-model" (
+  echo.
+  echo   [3/5] Downloading the FinBERT model ^(440 MB, one time; progress bars below^) ...
+  set "HF_HUB_DISABLE_XET=1"
+  "%PYV%" -c "from transformers import AutoModelForSequenceClassification as M, AutoTokenizer as T; T.from_pretrained('ProsusAI/finbert'); M.from_pretrained('ProsusAI/finbert')" && echo done> ".venv\.finbert-model"
+  set "HF_HUB_DISABLE_XET="
+)
+
+REM ---------------------------------------------------------------- 4. SEC identity
 if not defined SEC_USER_AGENT (
   findstr /b /c:"SEC_USER_AGENT=" .env >nul 2>nul || (
     echo.
@@ -64,11 +75,14 @@ if not defined SEC_USER_AGENT (
   )
 )
 
-REM ---------------------------------------------------------------- 4. launch
+REM ---------------------------------------------------------------- 5. launch
 if not defined EARNINGSPULSE_PORT set "EARNINGSPULSE_PORT=8501"
+set "URL=http://localhost:%EARNINGSPULSE_PORT%"
 echo.
-echo   EarningsPulse is starting: http://localhost:%EARNINGSPULSE_PORT%
-echo   Your browser will open automatically. Close this window to stop the app.
+echo   [5/5] Starting the dashboard on %URL% ...
+echo   The browser opens as soon as it is ready. Keep this window open; close it to stop the app.
 echo.
-"%PYV%" -m streamlit run app.py --server.port %EARNINGSPULSE_PORT% --server.headless false --browser.gatherUsageStats false --server.fileWatcherType none
+REM Open the browser once the app answers (Streamlit runs headless, so it never shows its own e-mail prompt)
+start "" /b powershell -NoProfile -WindowStyle Hidden -Command "for($i=0;$i -lt 240;$i++){try{Invoke-WebRequest -UseBasicParsing '%URL%/_stcore/health' | Out-Null; Start-Process '%URL%'; Write-Host '  EarningsPulse is running at %URL%'; break}catch{Start-Sleep -Milliseconds 500}}"
+"%PYV%" -m streamlit run app.py --server.port %EARNINGSPULSE_PORT% --server.headless true --browser.gatherUsageStats false --server.fileWatcherType none
 pause
