@@ -181,11 +181,13 @@ was read when it came out.
 
 ## What's inside
 
-![Landing page](docs/images/dashboard-landing.png)
+Pick a company, how many quarters and a tone model:
 
-Use the ☀️/🌙 icon at the top right to switch between light and dark mode.
+![Analyze screen](docs/images/app-analyze-light.png)
 
-![Health tab in light mode](docs/images/dashboard-health-light.png)
+Every dashboard has six tabs. Light and dark mode follow your Mac, or switch with the button at the bottom of the sidebar.
+
+![Health tab in light mode](docs/images/app-health-light.png)
 
 | Tab | Shows |
 |---|---|
@@ -197,8 +199,20 @@ Use the ☀️/🌙 icon at the top right to switch between light and dark mode.
 | **Guide** | A primer for beginners, every chart explained, and a searchable glossary |
 | **Sources & method** | Links to every filing used and a method summary |
 
-In the Mac app, **Portfolio** lists every company you follow with its latest verdict, health,
-tone, revenue growth, margins and F-Score; tick two or three rows to **Compare** them.
+**Changes**: what management added, reworded or dropped since the same quarter last year.
+
+![Changes tab](docs/images/app-changes.png)
+
+**Portfolio** lists every company you follow with its latest verdict, health, tone, revenue
+growth, margins and F-Score, and alerts you when one files new results.
+
+![Portfolio](docs/images/app-portfolio.png)
+
+Tick two or three rows to **Compare** them, lined up by calendar quarter:
+
+![Compare companies](docs/images/app-compare.png)
+
+![Compare charts](docs/images/app-compare-charts.png)
 
 **Data sources (all free and official)**
 
